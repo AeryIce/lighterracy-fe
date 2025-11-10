@@ -27,7 +27,7 @@ export const metadata: Metadata = {
       "Scan ISBN, bandingkan promo toko terdekat, dan temukan best-seller NYT. Chat Lightcy buat rekomendasi cepat—gratis.",
     url: "/",
     siteName: "Lighterracy",
-    images: [{ url: "/og/og-from-upload.png", width: 1200, height: 630 }],
+    images: [{ url: "/og-from-upload.png", width: 1200, height: 630 }],
     type: "website",
   },
   twitter: {
