@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"], display: "swap" });
 //   variable: "--font-geist-mono",
 //   subsets: ["latin"],
 // });
-
+export const viewport = { themeColor: "#000000" };
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://lighterracy-fe.vercel.app"),

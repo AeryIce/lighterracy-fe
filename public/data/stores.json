@@ -1,28 +1,1870 @@
 [
   {
-    "slug": "periplus-plaza",
-    "name": "Periplus Plaza",
-    "lat": -6.2001,
-    "lng": 106.8169,
-    "address": "Jl. Plaza No.1, Jakarta",
-    "city": "Jakarta",
-    "status": "open",
-    "priority": 1,
-    "image_url": "https://picsum.photos/seed/store1/1200/600",
-    "hours": "10:00–22:00",
-    "phone": "+62-21-1234567"
+    "id": "periplus-popular-canggu",
+    "name": "Periplus Popular Canggu",
+    "slug": "periplus-popular-canggu",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. Subak Sari No.84, Tibubeneng, Kec. Kuta Utara, Kab. Badung - Bali, Badung",
+    "phone": "6285950098462",
+    "hours": {
+      "mon": [],
+      "tue": [],
+      "wed": [],
+      "thu": [],
+      "fri": [],
+      "sat": [],
+      "sun": []
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/gmWmtucugR4mXibV7?g_st=iw",
+      "wa": "https://wa.me/6285950098462",
+      "tel": null
+    }
   },
   {
-    "slug": "periplus-garden",
-    "name": "Periplus Garden",
-    "lat": -6.1777,
-    "lng": 106.8283,
-    "address": "Jl. Taman 2, Jakarta",
-    "city": "Jakarta",
-    "status": "open",
-    "priority": 2,
-    "image_url": "https://picsum.photos/seed/store2/1200/600",
-    "hours": "10:00–22:00",
-    "phone": "+62-21-7654321"
+    "id": "periplus-tibubeneng-berawa",
+    "name": "Periplus Tibubeneng Berawa",
+    "slug": "periplus-tibubeneng-berawa",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. Pantai Berawa No.99, Tibubeneng, Kec. Kuta Utara, Kabupaten Badung, Bali, Badung",
+    "phone": "6285950098466",
+    "hours": {
+      "mon": [
+        "09:00-21:00"
+      ],
+      "tue": [
+        "09:00-21:00"
+      ],
+      "wed": [
+        "09:00-21:00"
+      ],
+      "thu": [
+        "09:00-21:00"
+      ],
+      "fri": [
+        "09:00-21:00"
+      ],
+      "sat": [
+        "09:00-21:00"
+      ],
+      "sun": [
+        "09:00-21:00"
+      ]
+    },
+    "links": {
+      "maps": "https://bit.ly/PeriplusTibubeneng",
+      "wa": "https://wa.me/6285950098466",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-ubud-market",
+    "name": "Periplus Ubud Market",
+    "slug": "periplus-ubud-market",
+    "lat": -8.508222,
+    "lng": 115.265139,
+    "address": "Jl. Raya Ubud, Lingkungan Padangtegal Kaja, Kel. Ubud Kec Ubud Kab Gianyar, Bali, Bali",
+    "phone": "6281338754007",
+    "hours": {
+      "mon": [
+        "09:00-22:00"
+      ],
+      "tue": [
+        "09:00-22:00"
+      ],
+      "wed": [
+        "09:00-22:00"
+      ],
+      "thu": [
+        "09:00-22:00"
+      ],
+      "fri": [
+        "09:00-22:00"
+      ],
+      "sat": [
+        "09:00-22:00"
+      ],
+      "sun": [
+        "09:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-8.508222,115.265139",
+      "wa": "https://wa.me/6281338754007",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-canggu-bali",
+    "name": "Periplus Canggu Bali",
+    "slug": "periplus-canggu-bali",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. Pantai Batu Bolong No.54 ,  Kec. Kuta Utara, Kabupaten Badung, Canggu",
+    "phone": "6287781336821",
+    "hours": {
+      "mon": [
+        "09:00-21:00"
+      ],
+      "tue": [
+        "09:00-21:00"
+      ],
+      "wed": [
+        "09:00-21:00"
+      ],
+      "thu": [
+        "09:00-21:00"
+      ],
+      "fri": [
+        "09:00-21:00"
+      ],
+      "sat": [
+        "09:00-21:00"
+      ],
+      "sun": [
+        "09:00-21:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/gD2ZaUsgxEuDgvvN9?g_st=iw",
+      "wa": "https://wa.me/6287781336821",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-hanoman-ubud",
+    "name": "Periplus Hanoman Ubud",
+    "slug": "periplus-hanoman-ubud",
+    "lat": -8.517783347836952,
+    "lng": 115.2632795,
+    "address": "F7J7+R8F, Jl. Hanoman, Ubud,, Kecamatan Ubud, Gianyar",
+    "phone": "6282144690601",
+    "hours": {
+      "mon": [
+        "09:00-20:00"
+      ],
+      "tue": [
+        "09:00-20:00"
+      ],
+      "wed": [
+        "09:00-20:00"
+      ],
+      "thu": [
+        "09:00-20:00"
+      ],
+      "fri": [
+        "09:00-20:00"
+      ],
+      "sat": [
+        "09:00-20:00"
+      ],
+      "sun": [
+        "09:00-20:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-8.517783347836952,115.2632795",
+      "wa": "https://wa.me/6282144690601",
+      "tel": null
+    }
+  },
+  {
+    "id": "pplus-bandara-dom-airside-departure",
+    "name": "P+ Bandara Dom Airside Departure",
+    "slug": "pplus-bandara-dom-airside-departure",
+    "lat": null,
+    "lng": null,
+    "address": "Bandara Dom Airside Departure, Terminal Keberangkatan Domestik Bandara I Gusti Ngurah Rai Bali, Jl. Raya Gusti Ngurah rai, Tuban, Kecamatan Kuta, Kabupaten Badung",
+    "phone": "628175721759",
+    "hours": {
+      "mon": [
+        "05:30-22:30"
+      ],
+      "tue": [
+        "05:30-22:30"
+      ],
+      "wed": [
+        "05:30-22:30"
+      ],
+      "thu": [
+        "05:30-22:30"
+      ],
+      "fri": [
+        "05:30-22:30"
+      ],
+      "sat": [
+        "05:30-22:30"
+      ],
+      "sun": [
+        "05:30-22:30"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/place/8%C2%B044'41.3%22S+115%C2%B009'45.3%22E/@-8.7448001,115.1600122,17z/data=!3m1!4b1!4m4!3m3!8m2!3d-8.7448001!4d115.1625925?entry=ttu&g_ep=EgoyMDI1MDMxMC4wIKXMDSoASAFQAw%3D%3D",
+      "wa": "https://wa.me/628175721759",
+      "tel": null
+    }
+  },
+  {
+    "id": "pplus-bandara-intl-gate-3-airside",
+    "name": "P+ Bandara Intl Gate 3 Airside",
+    "slug": "pplus-bandara-intl-gate-3-airside",
+    "lat": null,
+    "lng": null,
+    "address": "Bandara Int'l Gate 3 Airside, Terminal Keberangkatan Internasional Gate 3 Bandara I Gusti Ngurah Rai Bali, Jl. Raya Gusti Ngurah rai, Tuban, Kecamatan Kuta, Kabupaten Badung",
+    "phone": "628175721757",
+    "hours": {
+      "mon": [
+        "06:30-01:00"
+      ],
+      "tue": [
+        "06:30-01:00"
+      ],
+      "wed": [
+        "06:30-01:00"
+      ],
+      "thu": [
+        "06:30-01:00"
+      ],
+      "fri": [
+        "06:30-01:00"
+      ],
+      "sat": [
+        "06:30-01:00"
+      ],
+      "sun": [
+        "06:30-01:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/place/8%C2%B044'41.5%22S+115%C2%B010'01.0%22E/@-8.7448484,115.1643676,17z/data=!3m1!4b1!4m4!3m3!8m2!3d-8.7448484!4d115.1669479?entry=ttu&g_ep=EgoyMDI1MDMxMC4wIKXMDSoASAFQAw%3D%3D",
+      "wa": "https://wa.me/628175721757",
+      "tel": null
+    }
+  },
+  {
+    "id": "pplus-bandara-intl-gate-6-airside",
+    "name": "P+ Bandara Intl Gate 6 Airside",
+    "slug": "pplus-bandara-intl-gate-6-airside",
+    "lat": null,
+    "lng": null,
+    "address": "Bandara Int’l Gate 6 Airside, Terminal Keberangkatan Internasional Gate 6B Bandara I Gusti Ngurah Rai Bali, Jl. Raya Gusti Ngurah rai, Tuban, Kecamatan Kuta, Kabupaten Badung",
+    "phone": "628175721758",
+    "hours": {
+      "mon": [
+        "06:00-00:00"
+      ],
+      "tue": [
+        "06:00-00:00"
+      ],
+      "wed": [
+        "06:00-00:00"
+      ],
+      "thu": [
+        "06:00-00:00"
+      ],
+      "fri": [
+        "06:00-00:00"
+      ],
+      "sat": [
+        "06:00-00:00"
+      ],
+      "sun": [
+        "06:00-00:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/place/8%C2%B044'40.7%22S+115%C2%B010'08.7%22E/@-8.744642,115.1664891,17z/data=!3m1!4b1!4m4!3m3!8m2!3d-8.744642!4d115.1690694?entry=ttu&g_ep=EgoyMDI1MDMxMC4wIKXMDSoASAFQAw%3D%3D",
+      "wa": "https://wa.me/628175721758",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-petitenget",
+    "name": "Periplus Petitenget",
+    "slug": "periplus-petitenget",
+    "lat": null,
+    "lng": null,
+    "address": "Jl Petitenget No. 887, Kabupaten Badung",
+    "phone": "628175721768",
+    "hours": {
+      "mon": [
+        "08:00-21:00"
+      ],
+      "tue": [
+        "08:00-21:00"
+      ],
+      "wed": [
+        "08:00-21:00"
+      ],
+      "thu": [
+        "08:00-21:00"
+      ],
+      "fri": [
+        "08:00-21:00"
+      ],
+      "sat": [
+        "08:00-21:00"
+      ],
+      "sun": [
+        "08:00-21:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/ZbSSoxfC4GTp2fn67",
+      "wa": "https://wa.me/628175721768",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-bintang-seminyak",
+    "name": "Periplus Bintang Seminyak",
+    "slug": "periplus-bintang-seminyak",
+    "lat": -8.6944315,
+    "lng": 115.1674701,
+    "address": "Jl. Raya Seminyak No.17, Kuta",
+    "phone": "6287784644634",
+    "hours": {
+      "mon": [],
+      "tue": [],
+      "wed": [],
+      "thu": [],
+      "fri": [],
+      "sat": [],
+      "sun": []
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-8.6944315,115.1674701",
+      "wa": "https://wa.me/6287784644634",
+      "tel": null
+    }
+  },
+  {
+    "id": "pplus-artasedana-sanur",
+    "name": "P+ Artasedana Sanur",
+    "slug": "pplus-artasedana-sanur",
+    "lat": -8.6948941,
+    "lng": 115.2630132,
+    "address": "Hardy's Supermarket, Jl. Danau Tamblingan 136, Sanur",
+    "phone": "6287782866034",
+    "hours": {
+      "mon": [
+        "08:30-22:00"
+      ],
+      "tue": [
+        "08:30-22:00"
+      ],
+      "wed": [
+        "08:30-22:00"
+      ],
+      "thu": [
+        "08:30-22:00"
+      ],
+      "fri": [
+        "08:30-22:00"
+      ],
+      "sat": [
+        "08:30-22:00"
+      ],
+      "sun": [
+        "08:30-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-8.6948941,115.2630132",
+      "wa": "https://wa.me/6287782866034",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-seminyak-square",
+    "name": "Periplus Seminyak Square",
+    "slug": "periplus-seminyak-square",
+    "lat": -8.6835716,
+    "lng": 115.156668,
+    "address": "Jl. Kayu Aya No. 1, Kompleks Pertokoan Seminyak Square Kav. 9, Seminyak",
+    "phone": "6287782866036",
+    "hours": {
+      "mon": [
+        "08:00-22:00"
+      ],
+      "tue": [
+        "08:00-22:00"
+      ],
+      "wed": [
+        "08:00-22:00"
+      ],
+      "thu": [
+        "08:00-22:00"
+      ],
+      "fri": [
+        "08:00-22:00"
+      ],
+      "sat": [
+        "08:00-22:00"
+      ],
+      "sun": [
+        "08:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-8.6835716,115.156668",
+      "wa": "https://wa.me/6287782866036",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-bandara-international-corridor",
+    "name": "Periplus Bandara International Corridor",
+    "slug": "periplus-bandara-international-corridor",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. Airport Ngurah Rai, Badung, Tuban",
+    "phone": "6287840175392",
+    "hours": {
+      "mon": [
+        "06:30-00:30"
+      ],
+      "tue": [
+        "06:30-00:30"
+      ],
+      "wed": [
+        "06:30-00:30"
+      ],
+      "thu": [
+        "06:30-00:30"
+      ],
+      "fri": [
+        "06:30-00:30"
+      ],
+      "sat": [
+        "06:30-00:30"
+      ],
+      "sun": [
+        "06:30-00:30"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/place/8%C2%B044'40.2%22S+115%C2%B009'58.0%22E/@-8.7445044,115.1635288,17z/data=!3m1!4b1!4m4!3m3!8m2!3d-8.7445044!4d115.1661091?entry=ttu&g_ep=EgoyMDI1MDMxMC4wIKXMDSoASAFQAw%3D%3D",
+      "wa": "https://wa.me/6287840175392",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-kedatangan-domestik-bali",
+    "name": "Periplus Kedatangan Domestik Bali",
+    "slug": "periplus-kedatangan-domestik-bali",
+    "lat": null,
+    "lng": null,
+    "address": "Ngurah Rai Domestic Airport, Tuban",
+    "phone": "6285950098428",
+    "hours": {
+      "mon": [
+        "06:30-22:30"
+      ],
+      "tue": [
+        "06:30-22:30"
+      ],
+      "wed": [
+        "06:30-22:30"
+      ],
+      "thu": [
+        "06:30-22:30"
+      ],
+      "fri": [
+        "06:30-22:30"
+      ],
+      "sat": [
+        "06:30-22:30"
+      ],
+      "sun": [
+        "06:30-22:30"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/place/8%C2%B044'41.2%22S+115%C2%B009'51.5%22E/@-8.7447773,115.1617183,17z/data=!3m1!4b1!4m4!3m3!8m2!3d-8.7447773!4d115.1642986?entry=ttu&g_ep=EgoyMDI1MDMxMC4wIKXMDSoASAFQAw%3D%3D",
+      "wa": "https://wa.me/6285950098428",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-tino-ubud",
+    "name": "Periplus Tino Ubud",
+    "slug": "periplus-tino-ubud",
+    "lat": -8.506234,
+    "lng": 115.26078,
+    "address": "Jl Raya Ubud No. 23, (Opposite to Lotus Restaurant), Ubud",
+    "phone": "6287782866087",
+    "hours": {
+      "mon": [
+        "09:00-22:00"
+      ],
+      "tue": [
+        "09:00-22:00"
+      ],
+      "wed": [
+        "09:00-22:00"
+      ],
+      "thu": [
+        "09:00-22:00"
+      ],
+      "fri": [
+        "09:00-22:00"
+      ],
+      "sat": [
+        "09:00-22:00"
+      ],
+      "sun": [
+        "09:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.google.com/?q=-8.506234,115.260780",
+      "wa": "https://wa.me/6287782866087",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-summarecon-serpong",
+    "name": "Periplus Summarecon Serpong",
+    "slug": "periplus-summarecon-serpong",
+    "lat": null,
+    "lng": null,
+    "address": "Summarecon, Mall Serpong #GF -238 , Jl. Boulevard Raya Gading Serpong, Pakulonan Bar., Kec. Klp. Dua, Kabupaten Tangerang, Banten 15810, Kabupaten Tangerang",
+    "phone": "628175721769",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "08:00-22:00"
+      ],
+      "sun": [
+        "08:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/gGpW2eHomQGTzAwj8",
+      "wa": "https://wa.me/628175721769",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-soekarno-hatta-airport-dep-gate-1a",
+    "name": "Periplus Soekarno Hatta Airport Dep Gate 1A",
+    "slug": "periplus-soekarno-hatta-airport-dep-gate-1a",
+    "lat": null,
+    "lng": null,
+    "address": "Soekarno Hatta International Airport, Tangerang",
+    "phone": "6287782866057",
+    "hours": {
+      "mon": [
+        "04:00-20:00"
+      ],
+      "tue": [
+        "04:00-20:00"
+      ],
+      "wed": [
+        "04:00-20:00"
+      ],
+      "thu": [
+        "04:00-20:00"
+      ],
+      "fri": [
+        "04:00-20:00"
+      ],
+      "sat": [
+        "04:00-20:00"
+      ],
+      "sun": [
+        "04:00-20:00"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&t=m&vpsrc=6&ll=-6.127455,106.654673&spn=0.01502,0.022724&z=16&iwloc=0004bb92ab538ca17ba0b",
+      "wa": "https://wa.me/6287782866057",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-soekarno-hatta-airport-dep-gate-1b",
+    "name": "Periplus Soekarno Hatta Airport Dep Gate 1B",
+    "slug": "periplus-soekarno-hatta-airport-dep-gate-1b",
+    "lat": null,
+    "lng": null,
+    "address": "Bandara Soekarno Hatta Terminal I B, Jl. Raya Bandara Soekarno Hatta, RT.001/RW.010, Pajang, Tangerang",
+    "phone": "6287782866047",
+    "hours": {
+      "mon": [
+        "00:00-23:59"
+      ],
+      "tue": [
+        "00:00-23:59"
+      ],
+      "wed": [
+        "00:00-23:59"
+      ],
+      "thu": [
+        "00:00-23:59"
+      ],
+      "fri": [
+        "00:00-23:59"
+      ],
+      "sat": [
+        "00:00-23:59"
+      ],
+      "sun": [
+        "00:00-23:59"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&t=m&vpsrc=6&ll=-6.127455,106.654673&spn=0.01502,0.022724&z=16&iwloc=0004bb92ab538ca17ba0b",
+      "wa": "https://wa.me/6287782866047",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-soekarno-hatta-airport-dep-gate-2de",
+    "name": "Periplus Soekarno Hatta Airport Dep Gate 2DE",
+    "slug": "periplus-soekarno-hatta-airport-dep-gate-2de",
+    "lat": null,
+    "lng": null,
+    "address": "Soekarno Hatta International Airport, Tangerang",
+    "phone": "6287782866042",
+    "hours": {
+      "mon": [
+        "04:00-23:59"
+      ],
+      "tue": [
+        "04:00-23:59"
+      ],
+      "wed": [
+        "04:00-23:59"
+      ],
+      "thu": [
+        "04:00-23:59"
+      ],
+      "fri": [
+        "04:00-23:59"
+      ],
+      "sat": [
+        "04:00-23:59"
+      ],
+      "sun": [
+        "04:00-23:59"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&t=m&vpsrc=6&ll=-6.125034,106.656507&spn=0.00751,0.011362&z=17&iwloc=0004bb92a8852b8181408",
+      "wa": "https://wa.me/6287782866042",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-soekarno-hatta-airport-dep-gate-2f",
+    "name": "Periplus Soekarno Hatta Airport Dep Gate 2F",
+    "slug": "periplus-soekarno-hatta-airport-dep-gate-2f",
+    "lat": null,
+    "lng": null,
+    "address": "Bandar Udara Internasional Soekarno–Hatta, Terminal 2, RT.001/RW.010, Pajang, Kec. Benda, Tangerang",
+    "phone": "6285950098425",
+    "hours": {
+      "mon": [
+        "00:00-23:59"
+      ],
+      "tue": [
+        "00:00-23:59"
+      ],
+      "wed": [
+        "00:00-23:59"
+      ],
+      "thu": [
+        "00:00-23:59"
+      ],
+      "fri": [
+        "00:00-23:59"
+      ],
+      "sat": [
+        "00:00-23:59"
+      ],
+      "sun": [
+        "00:00-23:59"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&t=m&vpsrc=6&ll=-6.12449,106.656336&spn=0.00751,0.011362&z=17&iwloc=0004bb92ab5383cf184fc",
+      "wa": "https://wa.me/6285950098425",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-soekarno-hatta-airport-t3-dom-gate-15",
+    "name": "Periplus Soekarno Hatta Airport T3 Dom Gate 15",
+    "slug": "periplus-soekarno-hatta-airport-t3-dom-gate-15",
+    "lat": -6.116477,
+    "lng": 106.668816,
+    "address": "Soekarno Hatta International Airport, Tangerang",
+    "phone": "6287783245602",
+    "hours": {
+      "mon": [
+        "05:00-22:00"
+      ],
+      "tue": [
+        "05:00-22:00"
+      ],
+      "wed": [
+        "05:00-22:00"
+      ],
+      "thu": [
+        "05:00-22:00"
+      ],
+      "fri": [
+        "05:00-22:00"
+      ],
+      "sat": [
+        "05:00-22:00"
+      ],
+      "sun": [
+        "05:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-6.116477,106.668816",
+      "wa": "https://wa.me/6287783245602",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-soekarno-hatta-airport-t3-int-l-gate-09",
+    "name": "Periplus Soekarno Hatta Airport T3 Int'l Gate 09",
+    "slug": "periplus-soekarno-hatta-airport-t3-int-l-gate-09",
+    "lat": -6.118216,
+    "lng": 106.664476,
+    "address": "Soekarno Hatta International Airport, Tangerang",
+    "phone": "6287782866074",
+    "hours": {
+      "mon": [
+        "00:00-23:59"
+      ],
+      "tue": [
+        "00:00-23:59"
+      ],
+      "wed": [
+        "00:00-23:59"
+      ],
+      "thu": [
+        "00:00-23:59"
+      ],
+      "fri": [
+        "00:00-23:59"
+      ],
+      "sat": [
+        "00:00-23:59"
+      ],
+      "sun": [
+        "00:00-23:59"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-6.118216,106.664476",
+      "wa": "https://wa.me/6287782866074",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-t3-pier",
+    "name": "Periplus T3 Pier",
+    "slug": "periplus-t3-pier",
+    "lat": null,
+    "lng": null,
+    "address": "Soekarno Hatta Airport Terminal 3, Tangerang",
+    "phone": "25",
+    "hours": {
+      "mon": [
+        "00:00-23:59"
+      ],
+      "tue": [
+        "00:00-23:59"
+      ],
+      "wed": [
+        "00:00-23:59"
+      ],
+      "thu": [
+        "00:00-23:59"
+      ],
+      "fri": [
+        "00:00-23:59"
+      ],
+      "sat": [
+        "00:00-23:59"
+      ],
+      "sun": [
+        "00:00-23:59"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/oxUSLke9CjrnEd8Q8?g_st=awb",
+      "wa": "https://wa.me/",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-t3x-pavilion",
+    "name": "Periplus T3X Pavilion",
+    "slug": "periplus-t3x-pavilion",
+    "lat": -6.117660685721303,
+    "lng": 106.6670152,
+    "address": "Soekarno Hatta Airport Terminal 3, Tangerang",
+    "phone": "25",
+    "hours": {
+      "mon": [
+        "04:00-20:00"
+      ],
+      "tue": [
+        "04:00-20:00"
+      ],
+      "wed": [
+        "04:00-20:00"
+      ],
+      "thu": [
+        "04:00-20:00"
+      ],
+      "fri": [
+        "04:00-20:00"
+      ],
+      "sat": [
+        "04:00-20:00"
+      ],
+      "sun": [
+        "04:00-20:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-6.117660685721303,106.6670152",
+      "wa": "https://wa.me/",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-bandara-internasional-yogyakarta",
+    "name": "Periplus Bandara Internasional Yogyakarta",
+    "slug": "periplus-bandara-internasional-yogyakarta",
+    "lat": null,
+    "lng": null,
+    "address": "km 42 Jl.Wates  Kulon progo Yogyakarta, Yogyakarta",
+    "phone": "6287782866079",
+    "hours": {
+      "mon": [
+        "04:30-18:00"
+      ],
+      "tue": [
+        "04:30-18:00"
+      ],
+      "wed": [
+        "04:30-18:00"
+      ],
+      "thu": [
+        "04:30-18:00"
+      ],
+      "fri": [
+        "04:30-18:00"
+      ],
+      "sat": [
+        "04:30-18:00"
+      ],
+      "sun": [
+        "04:30-18:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/place/7°53'59.1\"S+110°03'28.8\"E/@-7.8619529,110.0023847,12.33z/data=!4m5!3m4!1s0x0:0x0!8m2!3d-7.89975!4d110.058?hl=en",
+      "wa": "https://wa.me/6287782866079",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-pakuwon-mall-yogyakarta",
+    "name": "Periplus Pakuwon Mall YOGYAKARTA",
+    "slug": "periplus-pakuwon-mall-yogyakarta",
+    "lat": null,
+    "lng": null,
+    "address": "Ex Hartono Mall Yogyakarta  LG in front of the ATM center ,  Jl. Ringroad Utara, Kali waru , Condongcatur,, Yogyakarta",
+    "phone": "6287782866071",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://goo.gl/maps/NqD1FXjzCfc8aHVz8",
+      "wa": "https://wa.me/6287782866071",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-tirtodipuran-yogyakarta",
+    "name": "Periplus Tirtodipuran Yogyakarta",
+    "slug": "periplus-tirtodipuran-yogyakarta",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. Tirtodipuran No.30, Mantrijeron, Kec. Mantrijeron, Yogyakarta",
+    "phone": "6285950098453",
+    "hours": {
+      "mon": [
+        "09:00-21:00"
+      ],
+      "tue": [
+        "09:00-21:00"
+      ],
+      "wed": [
+        "09:00-21:00"
+      ],
+      "thu": [
+        "09:00-21:00"
+      ],
+      "fri": [
+        "09:00-21:00"
+      ],
+      "sat": [
+        "09:00-22:00"
+      ],
+      "sun": [
+        "09:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/place/PERIPLUS+TIRTODIPURAN/@-7.8185576,110.3649199,15z/data=!4m6!3m5!1s0x2e7a576df5e3de3d:0x2f0d165b9a52983b!8m2!3d-7.8185576!4d110.3649199!16s%2Fg%2F11vc87gw4d?entry=ttu",
+      "wa": "https://wa.me/6285950098453",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-margocity-mall",
+    "name": "Periplus Margocity Mall",
+    "slug": "periplus-margocity-mall",
+    "lat": null,
+    "lng": null,
+    "address": "Lantai LG FLoor, Jl. Margonda Raya No.358, Kemiri Muka, Kec.Beji, Depok",
+    "phone": "6285950098461",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/,",
+      "wa": "https://wa.me/6285950098461",
+      "tel": null
+    }
+  },
+  {
+    "id": "setiabudi-one",
+    "name": "Setiabudi One",
+    "slug": "setiabudi-one",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. H.R. Rasuna Said Kuningan, Lantai GF Kav 64, DKI Jakarta",
+    "phone": "628175721767",
+    "hours": {
+      "mon": [],
+      "tue": [],
+      "wed": [],
+      "thu": [],
+      "fri": [],
+      "sat": [],
+      "sun": []
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/JKHYNZFhcpGjiKkZ8?g_st=ac",
+      "wa": "https://wa.me/628175721767",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-pacific-place",
+    "name": "Periplus Pacific Place",
+    "slug": "periplus-pacific-place",
+    "lat": -6.224269,
+    "lng": 106.809906,
+    "address": "Pacific Place Mall, SCBD, JL. Jend. Sudirman Kav. 52-53 Lot 385, Jakarta",
+    "phone": "6285950098449",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.google.com/?q=-6.224269,106.809906",
+      "wa": "https://wa.me/6285950098449",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-grand-indonesia",
+    "name": "Periplus Grand Indonesia",
+    "slug": "periplus-grand-indonesia",
+    "lat": null,
+    "lng": null,
+    "address": "Grand Indonesia East Mall LG, unit 20-23., Jl. M. H. Thamrin 1, Menteng, kec. Menteng, Jakarta Pusat",
+    "phone": "6285950098476",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://goo.gl/maps/5tKuik4152i4FZbs5",
+      "wa": "https://wa.me/6285950098476",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-plaza-indonesia",
+    "name": "Periplus Plaza Indonesia",
+    "slug": "periplus-plaza-indonesia",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. MH Thamrin Kav. 28-30, Basement Floor 84-86, Jakarta Pusat",
+    "phone": "6287782866044",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-6.193942,106.825165&spn=0.006762,0.011362&t=m&z=17&vpsrc=6&iwloc=0004ba9ffc75c48c59fdf",
+      "wa": "https://wa.me/6287782866044",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-gandaria-city",
+    "name": "Periplus Gandaria City",
+    "slug": "periplus-gandaria-city",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. K.H. M. Syafi'i Hadzami No.8, LG L#17, Jakarta Selatan",
+    "phone": "6287782866051",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-6.225033,106.826763&spn=0.108192,0.181789&t=m&z=13&vpsrc=6&iwloc=0004baa155217f35c827e",
+      "wa": "https://wa.me/6287782866051",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-lotte-shopping-avenue",
+    "name": "Periplus Lotte Shopping Avenue",
+    "slug": "periplus-lotte-shopping-avenue",
+    "lat": -6.22403,
+    "lng": 106.823888,
+    "address": "Jl. Prof. Dr. Satrio Kav. 3 - 5 Kuningan, LG Floor Unit 08, Jakarta Selatan",
+    "phone": "6287782866054",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-6.224030,106.823888",
+      "wa": "https://wa.me/6287782866054",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-pondok-indah-mall",
+    "name": "Periplus Pondok Indah Mall",
+    "slug": "periplus-pondok-indah-mall",
+    "lat": null,
+    "lng": null,
+    "address": "Metro Pondok Indah Blok III B Lt. 1 No.148, Jakarta Selatan",
+    "phone": "6287782866046",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-6.264931,106.785489&spn=0.003381,0.005681&t=m&z=18&vpsrc=6&iwloc=0004baa13d5cac554b302",
+      "wa": "https://wa.me/6287782866046",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-buybooksfromhome",
+    "name": "Periplus #buybooksfromhome",
+    "slug": "periplus-buybooksfromhome",
+    "lat": -6.202997,
+    "lng": 106.91454,
+    "address": "Jl. Rawa Gelam IV No.9, Kawasan Industri Pulogadung, Jakarta Timur, Jakarta Timur",
+    "phone": "6281770094907",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-6.202997,106.914540",
+      "wa": "https://wa.me/6281770094907",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-halim-perdanakusuma-airport-gate-8",
+    "name": "Periplus Halim Perdanakusuma Airport Gate 8",
+    "slug": "periplus-halim-perdanakusuma-airport-gate-8",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. Halim Perdanakusuma, Jakarta Timur",
+    "phone": "6287782866045",
+    "hours": {
+      "mon": [
+        "05:00-20:00"
+      ],
+      "tue": [
+        "05:00-20:00"
+      ],
+      "wed": [
+        "05:00-20:00"
+      ],
+      "thu": [
+        "05:00-20:00"
+      ],
+      "fri": [
+        "05:00-20:00"
+      ],
+      "sat": [
+        "05:00-20:00"
+      ],
+      "sun": [
+        "05:00-20:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/NokW5AAydPF7FkyN7",
+      "wa": "https://wa.me/6287782866045",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-halim-perdanakusuma-gate-6",
+    "name": "Periplus Halim Perdanakusuma Gate 6",
+    "slug": "periplus-halim-perdanakusuma-gate-6",
+    "lat": -6.266389,
+    "lng": 106.891111,
+    "address": "Jl. Halim Perdanakusuma, Jakarta Timur",
+    "phone": "6287782866055",
+    "hours": {
+      "mon": [
+        "05:00-19:00"
+      ],
+      "tue": [
+        "05:00-19:00"
+      ],
+      "wed": [
+        "05:00-19:00"
+      ],
+      "thu": [
+        "05:00-19:00"
+      ],
+      "fri": [
+        "05:00-19:00"
+      ],
+      "sat": [
+        "05:00-19:00"
+      ],
+      "sun": [
+        "05:00-19:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-6.266389,106.891111",
+      "wa": "https://wa.me/6287782866055",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-mall-kelapa-gading",
+    "name": "Periplus Mall Kelapa Gading",
+    "slug": "periplus-mall-kelapa-gading",
+    "lat": null,
+    "lng": null,
+    "address": "Mall Kelapa Gading 3 (MKG 3), GF #34, Jakarta Utara",
+    "phone": "6287782866049",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/place/PERIPLUS/@-6.1569119,106.9089181,15z/data=!4m6!3m5!1s0x2e69f53472d0f1a1:0xf79feeff0bf44d70!8m2!3d-6.1569119!4d106.9089181!16s%2Fg%2F1v3_02nb?entry=ttu",
+      "wa": "https://wa.me/6287782866049",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-heritage-bandung",
+    "name": "Periplus Heritage Bandung",
+    "slug": "periplus-heritage-bandung",
+    "lat": null,
+    "lng": null,
+    "address": "Lt.2 Heritage Lifestyle Hub, Jl. LLRE Martadinata St No.65, Citarum, Bandung Wetan, Bandung",
+    "phone": "6285950098463",
+    "hours": {
+      "mon": [
+        "07:00-22:00"
+      ],
+      "tue": [
+        "07:00-22:00"
+      ],
+      "wed": [
+        "07:00-22:00"
+      ],
+      "thu": [
+        "07:00-22:00"
+      ],
+      "fri": [
+        "07:00-22:00"
+      ],
+      "sat": [
+        "07:00-22:00"
+      ],
+      "sun": [
+        "07:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/zBbbf8HHc9FxdgzF6",
+      "wa": "https://wa.me/6285950098463",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-setiabudi-supermarket",
+    "name": "Periplus Setiabudi Supermarket",
+    "slug": "periplus-setiabudi-supermarket",
+    "lat": null,
+    "lng": null,
+    "address": "Setiabudhi Supermarket,, Jl. Dr Setiabudi No 42 & 46, Bandung",
+    "phone": "6287782866060",
+    "hours": {
+      "mon": [
+        "08:00-20:30"
+      ],
+      "tue": [
+        "08:00-20:30"
+      ],
+      "wed": [
+        "08:00-20:30"
+      ],
+      "thu": [
+        "08:00-20:30"
+      ],
+      "fri": [
+        "08:00-20:30"
+      ],
+      "sat": [
+        "08:00-20:30"
+      ],
+      "sun": [
+        "08:00-20:30"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/ysGAdBAyWgJ1ZLRJ6",
+      "wa": "https://wa.me/6287782866060",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-kota-baru-parahyangan",
+    "name": "Periplus Kota Baru Parahyangan",
+    "slug": "periplus-kota-baru-parahyangan",
+    "lat": null,
+    "lng": null,
+    "address": "YOGYA Junction Parahyangan, Gate Sogan, Ground Floor, Kota Baru Parahyangan, Bandung Barat 40553, Kab. Bandung Barat",
+    "phone": "628175721780",
+    "hours": {
+      "mon": [
+        "07:00-22:00"
+      ],
+      "tue": [
+        "07:00-22:00"
+      ],
+      "wed": [
+        "07:00-22:00"
+      ],
+      "thu": [
+        "07:00-22:00"
+      ],
+      "fri": [
+        "07:00-22:00"
+      ],
+      "sat": [
+        "07:00-22:00"
+      ],
+      "sun": [
+        "07:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/bzihzx4fAErCQHAa7",
+      "wa": "https://wa.me/628175721780",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-semarang",
+    "name": "Periplus Semarang",
+    "slug": "periplus-semarang",
+    "lat": null,
+    "lng": null,
+    "address": "Ahmad Yani International Airport, Semarang",
+    "phone": "6287782866073",
+    "hours": {
+      "mon": [
+        "04:30-19:30"
+      ],
+      "tue": [
+        "04:30-19:30"
+      ],
+      "wed": [
+        "04:30-19:30"
+      ],
+      "thu": [
+        "04:30-19:30"
+      ],
+      "fri": [
+        "04:30-19:30"
+      ],
+      "sat": [
+        "04:30-19:30"
+      ],
+      "sun": [
+        "04:30-19:30"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-6.974195,110.375543&spn=0.001688,0.00284&t=m&z=19&vpsrc=6&iwloc=0004bab222369b9d8e3cf",
+      "wa": "https://wa.me/6287782866073",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-tentrem-mall",
+    "name": "Periplus Tentrem Mall",
+    "slug": "periplus-tentrem-mall",
+    "lat": -6.98693,
+    "lng": 110.42236,
+    "address": "Jalan Gajah Mada 123, Semarang",
+    "phone": "6287729246594",
+    "hours": {
+      "mon": [],
+      "tue": [],
+      "wed": [],
+      "thu": [],
+      "fri": [],
+      "sat": [],
+      "sun": []
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-6.98693,110.42236",
+      "wa": "https://wa.me/6287729246594",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-solo-paragon",
+    "name": "Periplus Solo Paragon",
+    "slug": "periplus-solo-paragon",
+    "lat": null,
+    "lng": null,
+    "address": "Solo Paragon Lifestyle Mall, Lantai GF, Jl. Yosodipuro No.133, Mangkubumen, Kec. Banjarsari, Surakarta",
+    "phone": "6287782866072",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/,",
+      "wa": "https://wa.me/6287782866072",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-ranch-market-malang",
+    "name": "Periplus Ranch Market Malang",
+    "slug": "periplus-ranch-market-malang",
+    "lat": null,
+    "lng": null,
+    "address": "Jalan Kawi Atas No. 58, Gadingkasri, Klojen, Malang, Malang",
+    "phone": "62819322450",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/,",
+      "wa": "https://wa.me/62819322450",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-juanda-gate-4",
+    "name": "Periplus Juanda Gate 4",
+    "slug": "periplus-juanda-gate-4",
+    "lat": null,
+    "lng": null,
+    "address": "Juanda International Airport, Periplus, Jalan Raya Ir. H.Juanda, Segoro Tambak, Kec. Sedati, Sidoarjo",
+    "phone": "6287864577559",
+    "hours": {
+      "mon": [
+        "04:30-20:00"
+      ],
+      "tue": [
+        "04:30-20:00"
+      ],
+      "wed": [
+        "04:30-20:00"
+      ],
+      "thu": [
+        "04:30-20:00"
+      ],
+      "fri": [
+        "04:30-20:00"
+      ],
+      "sat": [
+        "04:30-20:00"
+      ],
+      "sun": [
+        "04:30-20:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/epiuXzt7yUd9CySQA",
+      "wa": "https://wa.me/6287864577559",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-juanda-gate-6-7-terminal-1",
+    "name": "Periplus Juanda Gate 6-7 Terminal 1",
+    "slug": "periplus-juanda-gate-6-7-terminal-1",
+    "lat": null,
+    "lng": null,
+    "address": "Juanda International Airport, Periplus, Jalan Raya Ir. H.Juanda No.5 Pintu 4, Segoro Tambak, Kec. Sedati, Sidoarjo",
+    "phone": "6285950098425",
+    "hours": {
+      "mon": [
+        "04:30-20:00"
+      ],
+      "tue": [
+        "04:30-20:00"
+      ],
+      "wed": [
+        "04:30-20:00"
+      ],
+      "thu": [
+        "04:30-20:00"
+      ],
+      "fri": [
+        "04:30-20:00"
+      ],
+      "sat": [
+        "04:30-20:00"
+      ],
+      "sun": [
+        "04:30-20:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/1BDeHFUC2DJhB5hw7",
+      "wa": "https://wa.me/6285950098425",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-galaxy-mall",
+    "name": "Periplus Galaxy Mall",
+    "slug": "periplus-galaxy-mall",
+    "lat": null,
+    "lng": null,
+    "address": "Lantai Dasar No.060-061, Jl. Dharmahusada Indah Timur No. 35-37., Surabaya",
+    "phone": "6287782866069",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-7.27591,112.782769&spn=0.006747,0.011362&t=m&z=17&vpsrc=6&iwloc=0004bab2fddbc90555c90",
+      "wa": "https://wa.me/6287782866069",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-pakuwon-supermall-surabaya",
+    "name": "Periplus Pakuwon Supermall SURABAYA",
+    "slug": "periplus-pakuwon-supermall-surabaya",
+    "lat": null,
+    "lng": null,
+    "address": "Lantai LG 100-101, Jl. Puncak Indah Lontar No. 2, Surabaya",
+    "phone": "6287782866068",
+    "hours": {
+      "mon": [
+        "10:00-22:00"
+      ],
+      "tue": [
+        "10:00-22:00"
+      ],
+      "wed": [
+        "10:00-22:00"
+      ],
+      "thu": [
+        "10:00-22:00"
+      ],
+      "fri": [
+        "10:00-22:00"
+      ],
+      "sat": [
+        "10:00-22:00"
+      ],
+      "sun": [
+        "10:00-22:00"
+      ]
+    },
+    "links": {
+      "maps": "http://maps.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-7.287935,112.678388&spn=0.006747,0.011362&t=m&z=17&vpsrc=6&iwloc=0004bab2fc0236d3e5490",
+      "wa": "https://wa.me/6287782866068",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-bandara-lombok",
+    "name": "Periplus Bandara Lombok",
+    "slug": "periplus-bandara-lombok",
+    "lat": null,
+    "lng": null,
+    "address": "Jl. Bypass BIL - Mandalika, Tanak Awu, Kec. Pujut, Kabupaten Lombok Tengah, Lombok",
+    "phone": "628175721779",
+    "hours": {
+      "mon": [
+        "05:00-20:00"
+      ],
+      "tue": [
+        "05:00-20:00"
+      ],
+      "wed": [
+        "05:00-20:00"
+      ],
+      "thu": [
+        "05:00-20:00"
+      ],
+      "fri": [
+        "05:00-20:00"
+      ],
+      "sat": [
+        "05:00-20:00"
+      ],
+      "sun": [
+        "05:00-20:00"
+      ]
+    },
+    "links": {
+      "maps": "https://maps.app.goo.gl/sV2KCezRmgN8bs3P9?g_st=com.google.maps.preview.copy",
+      "wa": "https://wa.me/628175721779",
+      "tel": null
+    }
+  },
+  {
+    "id": "periplus-labuan-bajo-airport",
+    "name": "Periplus Labuan Bajo Airport",
+    "slug": "periplus-labuan-bajo-airport",
+    "lat": -8.488511,
+    "lng": 119.887539,
+    "address": "Terminal Keberangkatan Lt.  2,, Bandar Udara Komodo,, Jl.  Yohanes Sehadun, Labuan Bajo",
+    "phone": "6287784224418",
+    "hours": {
+      "mon": [
+        "07:00-17:00"
+      ],
+      "tue": [
+        "07:00-17:00"
+      ],
+      "wed": [
+        "07:00-17:00"
+      ],
+      "thu": [
+        "07:00-17:00"
+      ],
+      "fri": [
+        "07:00-17:00"
+      ],
+      "sat": [
+        "07:00-17:00"
+      ],
+      "sun": [
+        "07:00-17:00"
+      ]
+    },
+    "links": {
+      "maps": "https://www.google.com/maps/search/-8.488511,119.887539",
+      "wa": "https://wa.me/6287784224418",
+      "tel": null
+    }
   }
 ]

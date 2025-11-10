@@ -1,5 +1,5 @@
 [
-  { 
+  {
     "id": "PB-READERS-11",
     "title": "Readers Week",
     "subtitle": "Diskon khusus kategori Readers",
@@ -9,7 +9,7 @@
     "end_at": "2025-11-30T23:59:59+07:00",
     "status": "active",
     "stores": ["periplus-plaza","periplus-garden"],
-    "description": "Nikmati potongan spesial untuk buku-buku kategori Readers. Cocok untuk pembaca pemula hingga intermediate. Kumpulkan bacaan tipis-tipis tiap hari."
+    "description": "Nikmati potongan spesial untuk buku-buku kategori Readers."
   },
   {
     "id": "ELT-START",
@@ -21,6 +21,50 @@
     "end_at": "2025-12-05T23:59:59+07:00",
     "status": "active",
     "stores": ["periplus-plaza"],
-    "description": "Mulai perjalanan bahasa Inggrismu. Paket ELT pilihan dengan harga bersahabat dan materi komplit untuk fondasi kuat."
+    "description": "Mulai perjalanan bahasa Inggrismu."
+  },
+  {
+    "id": "PB-FICTION-FEST",
+    "title": "Fiction Fest",
+    "subtitle": "Pilihan novel populer sepanjang bulan",
+    "terms": "S&K berlaku.",
+    "banner_url": "https://picsum.photos/seed/promo-fiction/1200/600",
+    "start_at": "2025-11-10T00:00:00+07:00",
+    "end_at": "2025-12-10T23:59:59+07:00",
+    "status": "active",
+    "stores": ["periplus-plaza","periplus-citywalk"]
+  },
+  {
+    "id": "PB-KIDS-HOLIDAY",
+    "title": "Kids Holiday Picks",
+    "subtitle": "Rekomendasi buku anak untuk liburan",
+    "terms": "Selama periode promo.",
+    "banner_url": "https://picsum.photos/seed/promo-kids/1200/600",
+    "start_at": "2025-11-15T00:00:00+07:00",
+    "end_at": "2025-12-31T23:59:59+07:00",
+    "status": "active",
+    "stores": ["periplus-garden"]
+  },
+  {
+    "id": "PB-NONFICTION-INSIGHT",
+    "title": "Non-Fiction Insight",
+    "subtitle": "Self-help & bisnis pilihan",
+    "terms": "S&K berlaku.",
+    "banner_url": "https://picsum.photos/seed/promo-nonfic/1200/600",
+    "start_at": "2025-11-01T00:00:00+07:00",
+    "end_at": "2025-12-01T23:59:59+07:00",
+    "status": "active",
+    "stores": ["periplus-plaza","periplus-garden","periplus-citywalk"]
+  },
+  {
+    "id": "PB-GIFT-GUIDE",
+    "title": "Holiday Gift Guide",
+    "subtitle": "Ide hadiah buku akhir tahun",
+    "terms": "Stok terbatas.",
+    "banner_url": "https://picsum.photos/seed/promo-gift/1200/600",
+    "start_at": "2025-11-20T00:00:00+07:00",
+    "end_at": "2026-01-05T23:59:59+07:00",
+    "status": "upcoming",
+    "stores": ["periplus-plaza"]
   }
 ]

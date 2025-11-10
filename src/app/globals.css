@@ -135,14 +135,6 @@
 @utility ring-brand { --tw-ring-color: var(--color-brand); }
 @utility shadow-soft { box-shadow: var(--shadow-soft); }
 
-/* marquee for PromoTicker */
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-@utility animate-marquee { animation: marquee 20s linear infinite; }
-@utility marquee-track { width: 200%; }
-
 /* fallback line clamp (kalau plugin belum ada) */
 @utility line-clamp-2 {
   display: -webkit-box;
@@ -171,9 +163,81 @@
 @keyframes blink { 0%{opacity:.2} 20%{opacity:1} 100%{opacity:.2} }
 @utility typing-dot { animation: blink 1.4s infinite both; }
 
-@media (prefers-reduced-motion: reduce) {
-  .animate-marquee { animation: none !important; }
-}
-
 @keyframes scanline { 0%{ transform: translateY(0);} 100%{ transform: translateY(calc(100% - 3px)); } }
 @utility scanline { animation: scanline 1.6s linear infinite alternate; }
+
+/* === Lighterracy: Marquee utils (NYT & Promo) === */
+.marquee-track { will-change: transform; }
+.animate-marquee { animation: marquee-x 28s linear infinite; }
+.animate-marquee-fast { animation: marquee-x 18s linear infinite; }
+
+/* pause saat hover (biar user bisa klik nyaman) */
+.animate-marquee:hover,
+.group:hover .animate-marquee { animation-play-state: paused; }
+
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); } /* karena list kita diduplikasi */
+}
+
+/* fade tepi kiri-kanan agar lebih halus */
+.mask-edge {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+}
+
+/* hormati preferensi user */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee, .animate-marquee-fast { animation: none !important; transform: none !important; }
+}
+/* === Lighterracy: Marquee unified (NYT & Promo) === */
+.marquee-track { will-change: transform; }        /* container track */
+.animate-marquee { animation: lr-marquee-x 28s linear infinite; }
+.animate-marquee-fast { animation: lr-marquee-x 18s linear infinite; }
+
+/* pause saat hover (biar klik gampang) */
+.animate-marquee:hover,
+.group:hover .animate-marquee { animation-play-state: paused; }
+
+/* keyframes tunggal */
+@keyframes lr-marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); } /* karena list diduplikasi */
+}
+
+/* efek fade di tepi */
+.mask-edge {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+}
+
+/* hormati preferensi user */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee, .animate-marquee-fast {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+/* === Lighterracy unique marquee (anti-bentrok) === */
+.lr-track { will-change: transform; }
+.lr-marquee { animation: lr-marquee-x 28s linear infinite; }
+.lr-marquee-fast { animation: lr-marquee-x 18s linear infinite; }
+
+/* pause saat hover */
+.lr-marquee:hover,
+.group:hover .lr-marquee { animation-play-state: paused; }
+
+@keyframes lr-marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); } /* karena list diduplikasi */
+}
+
+/* fade tepi */
+.mask-edge{
+  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 6%,#000 94%,transparent 100%);
+          mask-image:linear-gradient(to right,transparent 0,#000 6%,#000 94%,transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce){
+  .lr-marquee,.lr-marquee-fast{ animation:none!important; transform:none!important; }
+}
