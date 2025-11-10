@@ -1,0 +1,28 @@
+[
+  {
+    "slug": "periplus-plaza",
+    "name": "Periplus Plaza",
+    "lat": -6.2001,
+    "lng": 106.8169,
+    "address": "Jl. Plaza No.1, Jakarta",
+    "city": "Jakarta",
+    "status": "open",
+    "priority": 1,
+    "image_url": "https://picsum.photos/seed/store1/1200/600",
+    "hours": "10:00–22:00",
+    "phone": "+62-21-1234567"
+  },
+  {
+    "slug": "periplus-garden",
+    "name": "Periplus Garden",
+    "lat": -6.1777,
+    "lng": 106.8283,
+    "address": "Jl. Taman 2, Jakarta",
+    "city": "Jakarta",
+    "status": "open",
+    "priority": 2,
+    "image_url": "https://picsum.photos/seed/store2/1200/600",
+    "hours": "10:00–22:00",
+    "phone": "+62-21-7654321"
+  }
+]

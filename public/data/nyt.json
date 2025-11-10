@@ -1,0 +1,14 @@
+[
+  { "isbn": "9780143127741", "title": "Quiet Mornings", "author": "Jane Writer", "rank": 1, "cover": "https://picsum.photos/seed/nyt1/300/450" },
+  { "isbn": "9780062316110", "title": "Sky Between Pages", "author": "John Author", "rank": 2, "cover": "https://picsum.photos/seed/nyt2/300/450" },
+  { "isbn": "9780307465351", "title": "Paper Trails", "author": "A. Reader", "rank": 3, "cover": "https://picsum.photos/seed/nyt3/300/450" },
+  { "isbn": "9780525555370", "title": "Stories We Keep", "author": "C. Teller", "rank": 4, "cover": "https://picsum.photos/seed/nyt4/300/450" },
+  { "isbn": "9781501139154", "title": "The Long Shelf", "author": "M. Bookish", "rank": 5, "cover": "https://picsum.photos/seed/nyt5/300/450" },
+  { "isbn": "9781984822178", "title": "Whispers & Ink", "author": "N. Scribe", "rank": 6, "cover": "https://picsum.photos/seed/nyt6/300/450" },
+  { "isbn": "9780593139132", "title": "Night Library", "author": "L. Page", "rank": 7, "cover": "https://picsum.photos/seed/nyt7/300/450" },
+  { "isbn": "9780062963673", "title": "Golden Margins", "author": "K. Bound", "rank": 8, "cover": "https://picsum.photos/seed/nyt8/300/450" },
+  { "isbn": "9781982137274", "title": "Turn the Leaf", "author": "R. Chapter", "rank": 9, "cover": "https://picsum.photos/seed/nyt9/300/450" },
+  { "isbn": "9781250278197", "title": "Bookmark Days", "author": "S. Verse", "rank": 10, "cover": "https://picsum.photos/seed/nyt10/300/450" },
+  { "isbn": "9780593540488", "title": "Binding Hearts", "author": "T. Ribbon", "rank": 11, "cover": "https://picsum.photos/seed/nyt11/300/450" },
+  { "isbn": "9780593593804", "title": "Shelf Life", "author": "P. Spine", "rank": 12, "cover": "https://picsum.photos/seed/nyt12/300/450" }
+]

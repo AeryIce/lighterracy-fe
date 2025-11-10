@@ -1,0 +1,26 @@
+[
+  { 
+    "id": "PB-READERS-11",
+    "title": "Readers Week",
+    "subtitle": "Diskon khusus kategori Readers",
+    "terms": "Berlaku s/d 30 Nov. S&K berlaku.",
+    "banner_url": "https://picsum.photos/seed/promo-readers/1200/600",
+    "start_at": "2025-11-01T00:00:00+07:00",
+    "end_at": "2025-11-30T23:59:59+07:00",
+    "status": "active",
+    "stores": ["periplus-plaza","periplus-garden"],
+    "description": "Nikmati potongan spesial untuk buku-buku kategori Readers. Cocok untuk pembaca pemula hingga intermediate. Kumpulkan bacaan tipis-tipis tiap hari."
+  },
+  {
+    "id": "ELT-START",
+    "title": "ELT Starter Pack",
+    "subtitle": "Paket hemat English Learners",
+    "terms": "Selama persediaan masih ada.",
+    "banner_url": "https://picsum.photos/seed/promo-elt/1200/600",
+    "start_at": "2025-11-05T00:00:00+07:00",
+    "end_at": "2025-12-05T23:59:59+07:00",
+    "status": "active",
+    "stores": ["periplus-plaza"],
+    "description": "Mulai perjalanan bahasa Inggrismu. Paket ELT pilihan dengan harga bersahabat dan materi komplit untuk fondasi kuat."
+  }
+]

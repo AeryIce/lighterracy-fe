@@ -1,0 +1,5 @@
+[
+  { "id": "bn-1", "title": "Belanja Hemat Readers", "image_url": "https://picsum.photos/seed/banner1/1200/400", "link_url": "/promos/PB-READERS-11", "status": "active" },
+  { "id": "bn-2", "title": "ELT Starter Pack", "image_url": "https://picsum.photos/seed/banner2/1200/400", "link_url": "/promos/ELT-START", "status": "active" }
+]
+
