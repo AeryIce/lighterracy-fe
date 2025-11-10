@@ -15,29 +15,27 @@ const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 
 export const metadata: Metadata = {
-  title: "Lighterracy",
-  description: "the more you read, the brighter your spirit",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://lighterracy-fe.vercel.app"),
+  title: "Lighterracy — Scan ISBN & Promo Buku Terdekat",
+  description:
+    "Scan ISBN, bandingkan promo toko terdekat, dan temukan best-seller NYT. Chat Lightcy buat rekomendasi cepat—gratis.",
   manifest: "/manifest.webmanifest",
   themeColor: "#FDA50F",
-  icons: {
-    icon: [
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-64.png", sizes: "64x64", type: "image/png" },
-    ],
-    apple: "/icons/icon-192x192.png", // iOS akan auto-round
-    other: [
-      { rel: "mask-icon", url: "/icons/maskable-512.png" }, // cadangan
-    ],
-  },
   openGraph: {
-    title: "Lighterracy",
-    description: "Temukan promo buku & rekomendasi bacaan.",
-    images: [{ url: "https://picsum.photos/seed/lighterracy-og/1200/630", width: 1200, height: 630 }],
+    title: "Lighterracy — Scan ISBN & Promo Buku Terdekat",
+    description:
+      "Scan ISBN, bandingkan promo toko terdekat, dan temukan best-seller NYT. Chat Lightcy buat rekomendasi cepat—gratis.",
+    url: "/",
+    siteName: "Lighterracy",
+    images: [{ url: "/og/og-from-upload.png", width: 1200, height: 630 }],
+    type: "website",
   },
-  appleWebApp: {
-    capable: true,
-    title: "Lighterracy",
-    statusBarStyle: "default",
+  twitter: {
+    card: "summary_large_image",
+    title: "Lighterracy — Scan ISBN & Promo Buku Terdekat",
+    description:
+      "Scan ISBN, bandingkan promo toko terdekat, dan temukan best-seller NYT. Chat Lightcy buat rekomendasi cepat—gratis.",
+    images: ["/og/og-from-upload.png"],
   },
 };
 
@@ -72,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-startup-image" href="/splash/launch-2732x2048.png"
           media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
       </head>
-      <body className="min-h-dvh">{children}</body>
+       <body className={inter.className}>{children}</body>
     </html>
   );
 }

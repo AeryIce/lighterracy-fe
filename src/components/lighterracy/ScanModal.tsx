@@ -21,11 +21,25 @@ function isIsbn13(text: string) {
   return check === digits[12];
 }
 
+/** ----------------- Typed BarcodeDetector (no any) ------------------ */
+interface BarcodeDetection {
+  rawValue?: string;
+  raw?: string;
+}
+interface BarcodeDetectorInstance {
+  detect: (source: ImageBitmapSource) => Promise<BarcodeDetection[]>;
+}
+interface BarcodeDetectorCtor {
+  new (options?: { formats?: string[] }): BarcodeDetectorInstance;
+  getSupportedFormats?: () => Promise<string[]>;
+}
+/** ------------------------------------------------------------------- */
+
 export default function ScanModal({ open, onOpenChange }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // ⬇️ gunakan controls untuk stop ZXing
+  // gunakan controls untuk stop ZXing
   const zxingControlsRef = useRef<IScannerControls | null>(null);
   const zxingReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
@@ -54,11 +68,13 @@ export default function ScanModal({ open, onOpenChange }: Props) {
         return;
       }
 
-      // coba native BarcodeDetector
-      const BD = (globalThis as unknown as { BarcodeDetector?: any }).BarcodeDetector;
+      // coba native BarcodeDetector (typed)
+      const g = globalThis as unknown as { BarcodeDetector?: BarcodeDetectorCtor };
+      const BD = g.BarcodeDetector;
+
       if (BD && typeof BD === "function") {
         try {
-          const formats: string[] = (await BD.getSupportedFormats?.()) ?? [];
+          const formats = (await BD.getSupportedFormats?.()) ?? [];
           const want = ["ean_13", "ean_8", "code_128"];
           const supported = formats.length ? want.filter((f) => formats.includes(f)) : want;
           const detector = new BD({ formats: supported });
@@ -75,7 +91,8 @@ export default function ScanModal({ open, onOpenChange }: Props) {
             }
             const w = 480;
             const h = Math.floor((video.videoHeight / video.videoWidth) * w);
-            canvas.width = w; canvas.height = h;
+            canvas.width = w;
+            canvas.height = h;
             ctx?.drawImage(video, 0, 0, w, h);
             const bmp = await createImageBitmap(canvas);
             try {
@@ -90,7 +107,9 @@ export default function ScanModal({ open, onOpenChange }: Props) {
                   return;
                 }
               }
-            } catch { /* ignore */ }
+            } catch {
+              /* ignore */
+            }
             raf = requestAnimationFrame(loop);
           };
           raf = requestAnimationFrame(loop);
@@ -119,7 +138,7 @@ export default function ScanModal({ open, onOpenChange }: Props) {
         zxingReaderRef.current = new BrowserMultiFormatReader(hints /*, { delayBetweenScanAttempts: 150 }*/);
         const video = videoRef.current!;
 
-        // ❗ callback signature: (result?: Result, error?: Exception, controls?: IScannerControls)
+        // callback signature: (result?: Result, error?: Exception, controls?: IScannerControls)
         zxingControlsRef.current = await zxingReaderRef.current.decodeFromVideoDevice(
           undefined,
           video,
@@ -178,13 +197,22 @@ export default function ScanModal({ open, onOpenChange }: Props) {
           </SheetHeader>
 
           <div className="mt-4 space-y-3">
-            <div className="text-sm">Kode: <b>{result}</b></div>
+            <div className="text-sm">
+              Kode: <b>{result}</b>
+            </div>
             <div className="text-xs text-muted-foreground">(Mockup) Kita akan membuka halaman detail ISBN ini.</div>
             <div className="flex gap-2">
               <Link href={`/isbn/${result}`} className="inline-flex items-center px-3 h-9 rounded-md bg-brand text-black">
                 Buka detail
               </Link>
-              <Button variant="outline" onClick={() => { setResult(null); setError(null); onOpenChange(false); }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setResult(null);
+                  setError(null);
+                  onOpenChange(false);
+                }}
+              >
                 Tutup
               </Button>
             </div>
@@ -221,7 +249,9 @@ export default function ScanModal({ open, onOpenChange }: Props) {
               onChange={(e) => setManualIsbn(e.target.value)}
               inputMode="numeric"
             />
-            <Button onClick={handleManual} className="bg-brand text-black">OK</Button>
+            <Button onClick={handleManual} className="bg-brand text-black">
+              OK
+            </Button>
           </div>
         </div>
       </SheetContent>
