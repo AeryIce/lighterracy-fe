@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     title: "Lighterracy — Scan ISBN & Promo Buku Terdekat",
     description:
       "Scan ISBN, bandingkan promo toko terdekat, dan temukan best-seller NYT. Chat Lightcy buat rekomendasi cepat—gratis.",
-    images: ["/og/og-from-upload.png"],
+    images: ["/og-from-upload.png"],
   },
 };
 
