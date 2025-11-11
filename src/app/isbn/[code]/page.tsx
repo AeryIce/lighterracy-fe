@@ -3,21 +3,20 @@ import { headers } from "next/headers";
 import BookDetailModal from "@/components/lighterracy/BookDetailModal";
 
 type ParamsPromise = Promise<{ code: string }>;
-
 export const dynamic = "force-dynamic";
 
-// ====== Types untuk response /api/isbn/[code] ======
+/** ===== Types untuk response /api/isbn/[code] ===== */
 type IsbnApiBook = {
-  title: string;
+  title?: string;
   subtitle?: string;
   authors?: string[];
   publisher?: string;
   publishedDate?: string;
-  description?: string; // RAW dari API (bisa HTML + entities)
+  description?: string;
   textSnippet?: string;
   isbn13?: string | null;
-  cover?: string | null;
-  imageLinks?: { thumbnail?: string; smallThumbnail?: string } | null;
+  cover?: string | null; // fallback lama
+  imageLinks?: { thumbnail?: string; smallThumbnail?: string; medium?: string; large?: string } | null;
   pageCount?: number | null;
   printedPageCount?: number | null;
   dimensions?: { height?: string; width?: string; thickness?: string } | null;
@@ -26,14 +25,13 @@ type IsbnApiBook = {
   averageRating?: number | null;
   ratingsCount?: number | null;
 };
-
 type IsbnApiSuccess = { found: true; book: IsbnApiBook };
 type IsbnApiNotFound = { found: false };
 type IsbnApiResponse = IsbnApiSuccess | IsbnApiNotFound;
 
-function httpsify(url?: string | null) {
-  if (!url) return null;
-  return url.startsWith("http://") ? url.replace("http://", "https://") : url;
+function httpsify(u?: string | null) {
+  if (!u) return undefined;
+  return u.startsWith("http://") ? u.replace("http://", "https://") : u;
 }
 
 export async function generateMetadata({ params }: { params: ParamsPromise }): Promise<Metadata> {
@@ -67,25 +65,26 @@ export default async function IsbnPage({ params }: { params: ParamsPromise }) {
   const book = {
     title: b.title || "—",
     subtitle: b.subtitle || "",
-    authors: b.authors || [],
+    authors: b.authors ?? [],
     publisher: b.publisher || "",
     publishedDate: b.publishedDate || "",
-    // kirim RAW agar bisa dirender HTML aman di modal
-    descriptionHtml: b.description || "",
+    description: b.description || "",     // <- kirim description langsung
     textSnippet: b.textSnippet || "",
     isbn13: b.isbn13 ?? null,
-    cover:
-      httpsify(b.cover) ||
-      httpsify(b.imageLinks?.thumbnail) ||
-      httpsify(b.imageLinks?.smallThumbnail) ||
-      "/og/og-from-upload.png",
+    imageLinks: {
+      large: httpsify(b.imageLinks?.large),
+      medium: httpsify(b.imageLinks?.medium),
+      thumbnail: httpsify(b.imageLinks?.thumbnail) ?? httpsify(b.cover), // fallback ke cover lama
+      smallThumbnail: httpsify(b.imageLinks?.smallThumbnail),
+    },
     pageCount: b.printedPageCount ?? b.pageCount ?? null,
     dimensions: b.dimensions ?? null,
     dimensionsCm: b.dimensionsCm ?? null,
-    categories: b.categories || [],
+    categories: b.categories ?? [],
     averageRating: b.averageRating ?? null,
     ratingsCount: b.ratingsCount ?? null,
   };
 
+  // onOpenChange sengaja tidak dikirim (server component).
   return <BookDetailModal open book={book} />;
 }

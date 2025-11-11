@@ -1,273 +1,204 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-type IsbnPair = { type?: string | null; identifier?: string | null };
-type Dimen = { height?: string; width?: string; thickness?: string };
-type ImgLinks = {
-  smallThumbnail?: string | null;
-  thumbnail?: string | null;
-  medium?: string | null;
-  large?: string | null;
-};
-type NYTIsbn = { isbn10?: string | null; isbn13?: string | null };
-
-type BookLike = {
-  // umum
-  title?: string | null;
-  subtitle?: string | null;
-  authors?: string[] | null; // Google
-  author?: string | null; // NYT (single)
-  publisher?: string | null;
-  publishedDate?: string | null;
-
-  // teks
-  textSnippet?: string | null;
-  description?: string | null;
-  nytDescription?: string | null;
-
-  // gambar
-  cover?: string | null;
-  book_image?: string | null; // NYT
-  imageLinks?: ImgLinks | null;
-
-  // identitas
-  isbn?: string | null; // <— DITAMBAH: dari NYTCarousel
-  isbn13?: string | null;
-  primary_isbn13?: string | null; // NYT
-  isbns?: NYTIsbn[] | null; // NYT array
-  industryIdentifiers?: IsbnPair[] | null; // Google
-
-  // meta
-  categories?: string[] | null;
-  pageCount?: number | null;
-  printedPageCount?: number | null;
-  dimensions?: Dimen | null;
-  averageRating?: number | null;
-  ratingsCount?: number | null;
-  rank?: number | null; // NYT rank
+/** Item ringkas yang dikirim dari NYTCarousel */
+export type NytItem = {
+  isbn: string;
+  title: string;
+  author: string;
+  rank: number;
+  cover: string;
 };
 
 type Props = {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  book: BookLike | null;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  book: NytItem | null;
 };
 
-// ---------- utils ----------
+/* ---------- helpers ---------- */
 function httpsify(url?: string | null) {
   if (!url) return null;
-  return url.startsWith('http://') ? url.replace('http://', 'https://') : url;
+  return url.startsWith("http://") ? url.replace("http://", "https://") : url;
 }
-function decodeHtmlEntities(s = '') {
-  return s
+function decodeEntities(input = ""): string {
+  return input
     .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&nbsp;/g, ' ');
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#x([\da-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)));
 }
-function stripTagsKeepBreaks(html = '') {
-  const withBreaks = html.replace(/<br\s*\/?>/gi, '\n');
-  return withBreaks.replace(/<\/?[^>]+>/g, '');
-}
-function sanitize(htmlOrText = '') {
-  return decodeHtmlEntities(stripTagsKeepBreaks(htmlOrText)).trim();
-}
-function mmOrCm(v?: string | null) {
-  if (!v) return null;
-  const t = v.trim().toLowerCase();
-  if (t.endsWith('mm')) {
-    const n = parseFloat(t.replace(/mm$/, '').trim());
-    if (!Number.isNaN(n)) return `${(n / 10).toFixed(1)} cm`;
-  }
-  if (t.endsWith('cm')) return t;
-  return v;
-}
-function pickCover(b: BookLike): string {
-  return (
-    httpsify(b.cover) ||
-    httpsify(b.book_image) ||
-    httpsify(b.imageLinks?.large) ||
-    httpsify(b.imageLinks?.medium) ||
-    httpsify(b.imageLinks?.thumbnail) ||
-    httpsify(b.imageLinks?.smallThumbnail) ||
-    '/og/og-from-upload.png'
-  )!;
-}
-function pickAuthors(b: BookLike) {
-  if (b.authors && b.authors.length) return b.authors.join(', ');
-  if (b.author) return b.author;
-  return '';
-}
-function extractIsbn13(b?: BookLike | null): string | null {
-  const cands: Array<string | null | undefined> = [
-    b?.isbn, // <— PRIORITASKAN: dari NYTCarousel (sudah 13 digit)
-    b?.isbn13,
-    b?.primary_isbn13,
-    b?.industryIdentifiers?.find((x) => x?.type === 'ISBN_13')?.identifier,
-    b?.isbns?.find((x) => x?.isbn13)?.isbn13,
-  ];
-  for (const c of cands) {
-    if (typeof c === 'string' && /^\d{13}$/.test(c)) return c;
-  }
-  return null;
+/** Sanitasi ringan, tanpa `document` (aman SSR) */
+function sanitizeHtml(raw = ""): string {
+  let s = raw.replace(/<\s*(script|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "");
+  s = s.replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "");
+  s = s.replace(/\s(href|src)\s*=\s*(['"])\s*javascript:[^'"]*\2/gi, ` $1="#"`);
+  return s;
 }
 
+/* ---------- types API /api/isbn/[code] ---------- */
+type ApiBook = {
+  title?: string;
+  subtitle?: string;
+  authors?: string[];
+  publisher?: string;
+  publishedDate?: string;
+  description?: string;
+  textSnippet?: string;
+  isbn13?: string | null;
+  imageLinks?: {
+    thumbnail?: string;
+    smallThumbnail?: string;
+    medium?: string;
+    large?: string;
+  } | null;
+};
+type ApiOk = { found: true; book: ApiBook };
+type ApiNo = { found: false };
+type ApiResp = ApiOk | ApiNo;
+
+/* ---------- component ---------- */
 export default function BookModal({ open, onOpenChange, book }: Props) {
   const router = useRouter();
-  if (!open) return null;
 
-  const title = book?.title ?? '—';
-  const author = pickAuthors(book ?? ({} as BookLike));
-  const rank = typeof book?.rank === 'number' ? book.rank : null;
-  const cover = pickCover(book ?? ({} as BookLike));
+  const [loading, setLoading] = useState(false);
+  const [full, setFull] = useState<ApiBook | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
-  const isbn13 = extractIsbn13(book);
-  const pages = book?.printedPageCount ?? book?.pageCount ?? null;
-  const dims = book?.dimensions
-    ? {
-        h: mmOrCm(book.dimensions.height ?? null),
-        w: mmOrCm(book.dimensions.width ?? null),
-        t: mmOrCm(book.dimensions.thickness ?? null),
+  // Kunci body scroll saat modal terbuka
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  // Fetch detail Google Books saat dibuka
+  useEffect(() => {
+    setErr(null);
+    setFull(null);
+    if (!open || !book?.isbn) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/isbn/${encodeURIComponent(book.isbn)}`, {
+          cache: "no-store",
+        });
+        const data = (await res.json()) as ApiResp;
+        if (!cancelled) {
+          if ("found" in data && data.found) setFull(data.book ?? null);
+          else setErr("Data buku tidak ditemukan.");
+        }
+      } catch (e) {
+        if (!cancelled) setErr(e instanceof Error ? e.message : "Gagal memuat detail.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    : null;
-  const categories = Array.isArray(book?.categories) ? book?.categories : [];
+    })();
 
-  const rawSnippet =
-    book?.textSnippet ?? book?.nytDescription ?? book?.description ?? '';
-  const snippet = sanitize(rawSnippet);
-  const desc = sanitize(book?.description ?? '');
+    return () => {
+      cancelled = true;
+    };
+  }, [open, book?.isbn]);
 
-  const onDetail = () => {
-    if (!isbn13) return;
-    onOpenChange(false);
-    router.push(`/isbn/${isbn13}`);
-  };
+  if (!open || !book) return null;
+
+  const cover =
+    httpsify(full?.imageLinks?.large) ||
+    httpsify(full?.imageLinks?.medium) ||
+    httpsify(full?.imageLinks?.thumbnail) ||
+    httpsify(full?.imageLinks?.smallThumbnail) ||
+    book.cover ||
+    "/og/og-from-upload.png";
+
+  const author =
+    (full?.authors?.length ? full.authors!.join(", ") : book.author) || "—";
+
+  // *** PENTING: pakai description lebih dulu, baru fallback ke snippet
+  const rawShort = full?.description ?? full?.textSnippet ?? "";
+  const shortHtml = sanitizeHtml(decodeEntities(rawShort));
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[100] grid place-items-center bg-black/40 p-4"
+      className="fixed inset-0 z-[60] grid place-items-center bg-black/45 p-3"
+      onClick={() => onOpenChange?.(false)}
     >
-      <div className="w-full max-w-5xl rounded-2xl bg-white p-6 shadow-2xl">
-        {/* header */}
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <h3 className="text-xl font-semibold leading-snug">{title}</h3>
-          <button
-            onClick={() => onOpenChange(false)}
-            aria-label="Tutup"
-            className="rounded-full px-3 py-1 text-sm hover:bg-neutral-100"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* content */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
-          {/* cover */}
-          <div className="justify-self-center md:justify-self-start">
-            <div className="relative h-[320px] w-[220px] overflow-hidden rounded-xl bg-neutral-100">
-              <Image src={cover} alt={title} fill className="object-cover" />
+      <div
+        className="w-full max-w-4xl rounded-2xl bg-white p-4 md:p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="grid gap-5 md:grid-cols-[220px_1fr]">
+          {/* Cover */}
+          <div className="relative w-full h-[300px] md:h-[360px] rounded-xl overflow-hidden bg-neutral-100">
+            <Image
+              src={cover}
+              alt={book.title || "Book cover"}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 300px, 360px"
+            />
+            <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+              NYT #{book.rank}
             </div>
-            {rank != null && (
-              <div className="mt-2 inline-block rounded-full bg-black px-2 py-1 text-xs text-white">
-                NYT #{rank}
-              </div>
-            )}
           </div>
 
-          {/* info */}
-          <div className="space-y-3">
-            {author && (
-              <div className="text-sm">
-                <span className="opacity-60">Penulis: </span>
-                <span className="font-medium">{author}</span>
+          {/* Info ringkas */}
+          <div className="flex flex-col">
+            <div className="text-[11px] tracking-wide text-neutral-500 mb-1">
+              NEW YORK TIMES PICK
+            </div>
+            <h2 className="text-xl md:text-2xl font-semibold leading-snug">
+              {book.title || "—"}
+            </h2>
+            <div className="mt-1 text-sm text-neutral-700">{author}</div>
+
+            <div
+              className="mt-3 text-[15px] leading-relaxed text-neutral-800 line-clamp-5"
+              dangerouslySetInnerHTML={{ __html: shortHtml }}
+            />
+            {err && <div className="mt-2 text-xs text-red-600">{err}</div>}
+            {loading && <div className="mt-2 text-xs text-neutral-500">Memuat detail…</div>}
+
+            <div className="mt-5 flex gap-2">
+              <button
+                className="px-4 py-2 rounded-lg bg-black text-white text-sm disabled:opacity-50"
+                disabled={!book.isbn}
+                onClick={() =>
+                  book.isbn
+                    ? router.push(`/isbn/${encodeURIComponent(book.isbn)}`)
+                    : undefined
+                }
+              >
+                Detail
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-gray-200 text-sm"
+                onClick={() => onOpenChange?.(false)}
+              >
+                Tutup
+              </button>
+            </div>
+
+            {!full?.isbn13 && book.isbn && (
+              <div className="mt-3 text-[12px] text-amber-700">
+                ISBN-13 tidak terdeteksi dari sumber ini. Silakan cari manual via menu <b>Cari Buku</b>.
               </div>
-            )}
-            {book?.publisher && (
-              <div className="text-sm">
-                <span className="opacity-60">Penerbit: </span>
-                <span className="font-medium">{book.publisher}</span>
-              </div>
-            )}
-            {isbn13 && (
-              <div className="text-sm">
-                <span className="opacity-60">ISBN-13: </span>
-                <span className="font-medium">{isbn13}</span>
-              </div>
-            )}
-            {pages && (
-              <div className="text-sm">
-                <span className="opacity-60">Halaman: </span>
-                <span className="font-medium">{pages}</span>
-              </div>
-            )}
-            {dims && (dims.h || dims.w || dims.t) && (
-              <div className="text-sm">
-                <span className="opacity-60">Dimensi: </span>
-                <span className="font-medium">
-                  {[
-                    dims.h ? `H ${dims.h}` : null,
-                    dims.w ? `W ${dims.w}` : null,
-                    dims.t ? `T ${dims.t}` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' × ')}
-                </span>
-              </div>
-            )}
-            {!!categories?.length && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {categories.slice(0, 6).map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            )}
-            {snippet && (
-              <p className="pt-2 text-sm italic text-neutral-700">{snippet}</p>
-            )}
-            {desc && (
-              <p className="text-sm leading-relaxed text-neutral-800">{desc}</p>
             )}
           </div>
         </div>
-
-        {/* actions */}
-        <div className="mt-6 flex flex-wrap gap-2">
-          <button
-            onClick={onDetail}
-            disabled={!isbn13}
-            className={`rounded-lg px-4 py-2 text-sm ${
-              isbn13
-                ? 'bg-black text-white hover:opacity-90'
-                : 'cursor-not-allowed bg-neutral-200 text-neutral-500'
-            }`}
-          >
-            Detail Buku
-          </button>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="rounded-lg bg-neutral-100 px-4 py-2 text-sm"
-          >
-            Tutup
-          </button>
-        </div>
-
-        {!isbn13 && (
-          <div className="mt-2 text-xs text-amber-600">
-            ISBN-13 tidak terdeteksi dari item ini. Silakan cari manual via menu
-            <span className="font-semibold"> Cari Buku</span>.
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1,214 +1,239 @@
-// src/components/lighterracy/BookDetailModal.tsx
 "use client";
 
 import Image from "next/image";
-import { useCallback } from "react";
+import { useEffect } from "react";
 
-type Dim = { height?: string; width?: string; thickness?: string } | null;
+/** Dimensi dari Google Books (bisa string "8 inches", "20 cm", dll) */
+export type Dim =
+  | { height?: string; width?: string; thickness?: string }
+  | null;
 
-type Book = {
+/** Payload buku lengkap yang dipakai modal */
+export type BookFull = {
   title: string;
   subtitle?: string;
-  authors: string[];
-  publisher: string;
-  publishedDate: string;
-  categories: string[];
-  description?: string;
+  authors?: string[];
+  description?: string; // boleh mengandung HTML entities/tags dari Google
   textSnippet?: string;
-  isbn13: string | null;
-  pageCount: number | null;
-  dimensions: Dim;
-  imageLinks?: { thumbnail?: string; smallThumbnail?: string; medium?: string; large?: string } | null;
-  cover?: string | null;
+  categories?: string[];
+  publisher?: string;
+  publishedDate?: string;
+  isbn13?: string | null;
+  pageCount?: number | null;
+  dimensions?: Dim;
+  averageRating?: number | null;
+  ratingsCount?: number | null;
+  imageLinks?: {
+    thumbnail?: string;
+    smallThumbnail?: string;
+    medium?: string;
+    large?: string;
+  } | null;
 };
 
 type Props = {
-  open?: boolean; // dipakai pada page /isbn/[code] agar tampil sebagai konten modal
-  book: Book | null;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void; // opsional (page / modal pembuka bisa tak kirim)
+  book: BookFull | null;
 };
 
-/* -------------------- Helpers -------------------- */
-
-// Decode entity umum tanpa akses DOM (aman untuk SSR)
+/* ==== Utils ==== */
 function decodeEntities(input = ""): string {
   return input
-    .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'");
+    .replace(/&#x([\da-fA-F]+);/g, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16))
+    )
+    .replace(/&#(\d+);/g, (_, num) =>
+      String.fromCharCode(parseInt(num, 10))
+    );
 }
 
-// Izinkan tag aman & rapikan paragraf
-function sanitizeHtml(input = ""): string {
-  if (!input) return "";
-  // decode entities dahulu
-  let s = decodeEntities(input);
-
-  // Normalisasi line break → <br/>
-  s = s.replace(/\r\n|\r|\n/g, "<br/>");
-
-  // Escape semua tag…
-  s = s.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-  // …lalu kembalikan tag yang diizinkan
-  // (b, strong, i, em, br, p, ul, ol, li)
-  s = s.replace(
-    /&lt;(\/?(?:b|strong|i|em|br|p|ul|ol|li))&gt;/gi,
-    "<$1>"
+/** Sanitasi ringan agar tag dasar aktif tanpa risiko obvious XSS */
+function sanitizeHtml(raw = ""): string {
+  // buang <script> / <style>
+  let s = raw.replace(
+    /<\s*(script|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,
+    ""
   );
-
-  // Rapikan <br/><br/> menjadi pemisah paragraf
-  s = s.replace(/(?:<br\s*\/?>\s*){2,}/gi, "<br/><br/>");
-
+  // buang on* handlers (onclick, onerror, dst)
+  s = s.replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "");
+  // netralisir javascript: pada href/src
+  s = s.replace(
+    /\s(href|src)\s*=\s*(['"])\s*javascript:[^'"]*\2/gi,
+    ` $1="#"`
+  );
   return s;
 }
 
-// Ambil URL cover terbaik
-function pickCover(b: Book | null): string {
-  const cand =
-    b?.cover ||
-    b?.imageLinks?.large ||
-    b?.imageLinks?.medium ||
-    b?.imageLinks?.thumbnail ||
-    b?.imageLinks?.smallThumbnail;
-  return cand || "/og/og-from-upload.png";
-}
+/** Konversi "8 in" / "8 inches" / `20 cm` → string cm untuk tampilan */
+function toCm(dim?: Dim): string {
+  if (!dim) return "—";
+  const take = (s?: string) => (s || "").trim();
+  const H = take(dim.height);
+  const W = take(dim.width);
+  const T = take(dim.thickness);
 
-// Konversi string dimensi (bisa "8.5 in" / "21 cm") → cm (angka)
-function parseToCm(s?: string): number | null {
-  if (!s) return null;
-  const m = s.match(/([\d.]+)\s*(cm|mm|in|inch|inches|")/i);
-  if (!m) return null;
-  const val = parseFloat(m[1]);
-  const unit = m[2].toLowerCase();
-  if (Number.isNaN(val)) return null;
-  if (unit === "cm") return val;
-  if (unit === "mm") return val / 10;
-  // inch family
-  return val * 2.54;
-}
+  const parseOne = (val: string) => {
+    if (!val) return null;
+    const m = val.toLowerCase().match(/([\d.,]+)/);
+    if (!m) return null;
+    const num = parseFloat(m[1].replace(",", "."));
+    if (!Number.isFinite(num)) return null;
+    const isInch = /inch|in\b|["”]/.test(val.toLowerCase());
+    const cm = isInch ? num * 2.54 : num;
+    return Math.round(cm * 10) / 10; // 1 desimal
+  };
 
-function dimsToText(d: Dim): string | null {
-  if (!d) return null;
-  const h = parseToCm(d.height);
-  const w = parseToCm(d.width);
-  const t = parseToCm(d.thickness);
+  const h = parseOne(H);
+  const w = parseOne(W);
+  const t = parseOne(T);
+
   const parts: string[] = [];
-  if (h) parts.push(`${h.toFixed(1)} cm`);
-  if (w) parts.push(`${w.toFixed(1)} cm`);
-  if (t) parts.push(`${t.toFixed(1)} cm`);
-  if (!parts.length) return null;
-  return parts.join(" × ");
+  if (w != null) parts.push(`${w}cm`);
+  if (h != null) parts.push(`${h}cm`);
+  if (t != null) parts.push(`${t}cm`);
+  return parts.length ? parts.join(" × ") : "—";
 }
 
-/* -------------------- Component -------------------- */
+/* ==== Component ==== */
+export default function BookDetailModal({ open, onOpenChange, book }: Props) {
+  // Lock scroll saat modal terbuka (client-only)
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
-export default function BookDetailModal({ book }: Props) {
-  const cover = pickCover(book);
-  const title = book?.title || "—";
-  const subtitle = book?.subtitle?.trim();
-  const authors = (book?.authors ?? []).join(", ");
-  const publisher =
-    [book?.publisher, book?.publishedDate].filter(Boolean).join(" · ") || "";
-  const cats = book?.categories ?? [];
-  const isbn13 = book?.isbn13 || "—";
-  const pages = book?.pageCount ?? null;
-  const dims = dimsToText(book?.dimensions ?? null);
+  if (!open || !book) return null;
 
-  const renderHtml = useCallback((html: string) => {
-    return { __html: sanitizeHtml(html) };
-  }, []);
+  const cover =
+    book.imageLinks?.large ||
+    book.imageLinks?.medium ||
+    book.imageLinks?.thumbnail ||
+    book.imageLinks?.smallThumbnail ||
+    "/og/og-from-upload.png";
+
+  const title = book.title || "—";
+  const subtitle = book.subtitle || "";
+  const authors = book.authors?.length ? book.authors.join(", ") : "—";
+  const publisher = book.publisher || "—";
+  const published = book.publishedDate || "—";
+  const categories = book.categories ?? [];
+  const pages = book.pageCount ?? null;
+
+  const safeSnippet = book.textSnippet
+    ? decodeEntities(book.textSnippet)
+    : "";
+  const safeDescHtml = book.description
+    ? sanitizeHtml(decodeEntities(book.description))
+    : "";
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="grid grid-cols-1 md:grid-cols-[260px,1fr] gap-6 md:gap-8">
-        {/* Cover */}
-        <div className="justify-self-center md:justify-self-start">
-          <div className="relative w-[220px] h-[320px] md:w-[240px] md:h-[360px] rounded-xl overflow-hidden bg-neutral-100 shadow">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[70] grid place-items-center bg-black/45 p-3"
+      onClick={() => onOpenChange?.(false)}
+    >
+      <div
+        className="w-full max-w-5xl rounded-2xl bg-white shadow-xl p-4 md:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="grid gap-5 md:grid-cols-[240px_1fr]">
+          {/* Cover kiri */}
+          <div className="relative w-full h-[340px] md:h-[420px] rounded-xl overflow-hidden bg-neutral-100">
             <Image
               src={cover}
               alt={title}
               fill
               className="object-cover"
-              sizes="240px"
+              sizes="(max-width: 768px) 340px, 420px"
             />
           </div>
-        </div>
 
-        {/* Info */}
-        <div className="space-y-3">
-          <h1 className="text-2xl font-semibold leading-snug">{title}</h1>
-          {subtitle ? (
-            <div className="text-sm text-neutral-600">{subtitle}</div>
-          ) : null}
+          {/* Info kanan */}
+          <div className="flex flex-col">
+            <div className="text-sm text-neutral-600">{authors}</div>
+            <h2 className="text-xl md:text-2xl font-semibold leading-snug mt-1">
+              {title}
+            </h2>
+            {subtitle ? (
+              <div className="mt-0.5 text-neutral-700">{subtitle}</div>
+            ) : null}
+            {safeSnippet ? (
+              <div className="mt-2 italic text-neutral-700">
+                {safeSnippet}
+              </div>
+            ) : null}
 
-          {authors && (
-            <div className="text-sm">
-              <span className="text-neutral-500">Penulis: </span>
-              <span className="font-medium">{authors}</span>
+            {/* meta ringkas */}
+            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+              <div>
+                <span className="text-neutral-500">Publisher:</span>{" "}
+                {publisher}
+              </div>
+              <div>
+                <span className="text-neutral-500">Published:</span>{" "}
+                {published}
+              </div>
+              <div>
+                <span className="text-neutral-500">ISBN-13:</span>{" "}
+                {book.isbn13 || "—"}
+              </div>
+              <div>
+                <span className="text-neutral-500">Pages:</span>{" "}
+                {pages ?? "—"}
+              </div>
+              <div className="col-span-2">
+                <span className="text-neutral-500">Dimensions:</span>{" "}
+                {toCm(book.dimensions)}
+              </div>
             </div>
-          )}
 
-          {publisher && (
-            <div className="text-sm">
-              <span className="text-neutral-500">Publikasi: </span>
-              {publisher}
-            </div>
-          )}
-
-          {/* Kategori */}
-          {cats.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {cats.map((c) => (
-                <span
-                  key={c}
-                  className="inline-block rounded-full bg-amber-100 text-amber-900 text-xs px-2 py-1"
-                >
-                  {c}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* ISBN, halaman, dimensi */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-sm">
-            <div>
-              <div className="text-neutral-500">ISBN-13</div>
-              <div className="font-medium tracking-wide">{isbn13}</div>
-            </div>
-            <div>
-              <div className="text-neutral-500">Halaman</div>
-              <div className="font-medium">{pages ?? "—"}</div>
-            </div>
-            <div>
-              <div className="text-neutral-500">Dimensi</div>
-              <div className="font-medium">{dims ?? "—"}</div>
-            </div>
+            {/* categories */}
+            {categories.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {categories.map((c: string) => (
+                  <span
+                    key={c}
+                    className="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
-      </div>
 
-      {/* Snippet (miring) */}
-      {book?.textSnippet ? (
-        <p
-          className="mt-6 italic text-neutral-700"
-          dangerouslySetInnerHTML={renderHtml(book.textSnippet)}
-        />
-      ) : null}
-
-      {/* Deskripsi (fallback: jika tidak ada, tulis info singkat) */}
-      <div className="mt-4 text-[15px] leading-relaxed">
-        {book?.description ? (
+        {/* Deskripsi panjang (HTML aman) */}
+        {safeDescHtml ? (
           <div
-            dangerouslySetInnerHTML={renderHtml(book.description)}
+            className="mt-5 text-sm leading-relaxed text-neutral-800 max-h-[30vh] overflow-auto pr-1"
+            dangerouslySetInnerHTML={{ __html: safeDescHtml }}
           />
-        ) : (
-          <div className="text-neutral-600">
-            (Tidak ada deskripsi dari Google Books.)
-          </div>
-        )}
+        ) : null}
+
+        <div className="mt-5 flex justify-end">
+          <button
+            className="px-4 py-2 rounded-lg bg-gray-200 text-sm"
+            onClick={() => {
+              if (typeof onOpenChange === "function") onOpenChange(false);
+              else if (typeof window !== "undefined") window.history.back();
+            }}
+          >
+            Tutup
+          </button>
+        </div>
       </div>
     </div>
   );
