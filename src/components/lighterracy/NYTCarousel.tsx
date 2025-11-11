@@ -41,7 +41,7 @@ export default function NYTCarousel({
       try {
         const res = await fetch(`/api/nyt?list=${encodeURIComponent(list)}`, {
           signal: controller.signal,
-          cache: "force-cache",
+          cache: "no-store",
         });
         if (!res.ok) throw new Error(`NYT fetch failed (${res.status})`);
         const data = (await res.json()) as { books?: NYTRawItem[]; list_name?: string; updated?: string };
