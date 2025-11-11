@@ -1,246 +1,273 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
-type Item = { isbn: string; title: string; author: string; rank: number; cover: string };
+type IsbnPair = { type?: string | null; identifier?: string | null };
+type Dimen = { height?: string; width?: string; thickness?: string };
+type ImgLinks = {
+  smallThumbnail?: string | null;
+  thumbnail?: string | null;
+  medium?: string | null;
+  large?: string | null;
+};
+type NYTIsbn = { isbn10?: string | null; isbn13?: string | null };
 
-type Full = {
-  title?: string;
-  subtitle?: string;
-  authors?: string[];
-  publisher?: string;
-  publishedDate?: string;
-  description?: string;
-  textSnippet?: string;
-  categories?: string[];
+type BookLike = {
+  // umum
+  title?: string | null;
+  subtitle?: string | null;
+  authors?: string[] | null; // Google
+  author?: string | null; // NYT (single)
+  publisher?: string | null;
+  publishedDate?: string | null;
+
+  // teks
+  textSnippet?: string | null;
+  description?: string | null;
+  nytDescription?: string | null;
+
+  // gambar
+  cover?: string | null;
+  book_image?: string | null; // NYT
+  imageLinks?: ImgLinks | null;
+
+  // identitas
+  isbn?: string | null; // <— DITAMBAH: dari NYTCarousel
   isbn13?: string | null;
+  primary_isbn13?: string | null; // NYT
+  isbns?: NYTIsbn[] | null; // NYT array
+  industryIdentifiers?: IsbnPair[] | null; // Google
+
+  // meta
+  categories?: string[] | null;
   pageCount?: number | null;
-  dimensions?: { height?: string; width?: string; thickness?: string } | null;
+  printedPageCount?: number | null;
+  dimensions?: Dimen | null;
   averageRating?: number | null;
   ratingsCount?: number | null;
-  imageLinks?: { thumbnail?: string; smallThumbnail?: string; medium?: string; large?: string } | null;
-  previewLink?: string;
-  infoLink?: string;
+  rank?: number | null; // NYT rank
 };
 
-type Props = { open: boolean; onOpenChange: (v: boolean) => void; book: Item | null };
+type Props = {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  book: BookLike | null;
+};
 
-/* ---------- helpers aman SSR ---------- */
-function decodeEntities(s = ""): string {
+// ---------- utils ----------
+function httpsify(url?: string | null) {
+  if (!url) return null;
+  return url.startsWith('http://') ? url.replace('http://', 'https://') : url;
+}
+function decodeHtmlEntities(s = '') {
   return s
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
     .replace(/&quot;/g, '"')
-    .replace(/&apos;|&#39;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&nbsp;/g, " ");
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ');
 }
-function sanitizeHtml(input = ""): string {
-  if (!input) return "";
-  const decoded = decodeEntities(input);
-  let s = decoded.replace(/<(\/?)(?!b|strong|i|em|br|p|ul|ol|li|sub|sup|a)([a-z0-9-]+)(\s[^>]*)?>/gi, "");
-  s = s.replace(/<(b|strong|i|em|br|p|ul|ol|li|sub|sup)\b[^>]*>/gi, "<$1>");
-  s = s.replace(/<a\b([^>]*)>/gi, (_m, attrs) => {
-    const m = /\bhref\s*=\s*(['"]?)([^"' >]+)\1/i.exec(attrs || "");
-    const href = m ? m[2] : "";
-    if (!/^https?:\/\//i.test(href)) return "<span>";
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer">`;
-  });
-  return s;
+function stripTagsKeepBreaks(html = '') {
+  const withBreaks = html.replace(/<br\s*\/?>/gi, '\n');
+  return withBreaks.replace(/<\/?[^>]+>/g, '');
 }
-function httpsify(u?: string | null) {
-  if (!u) return u ?? null;
-  return u.startsWith("http://") ? u.replace("http://", "https://") : u;
+function sanitize(htmlOrText = '') {
+  return decodeHtmlEntities(stripTagsKeepBreaks(htmlOrText)).trim();
 }
-function toCmStr(txt?: string): string | null {
-  if (!txt) return null;
-  const num = parseFloat(txt.replace(",", "."));
-  if (Number.isNaN(num)) return txt;
-  const isIn = /in(ch|ches)?|"/i.test(txt);
-  const cm = isIn ? Math.round(num * 2.54 * 10) / 10 : num;
-  return `${cm} cm`;
+function mmOrCm(v?: string | null) {
+  if (!v) return null;
+  const t = v.trim().toLowerCase();
+  if (t.endsWith('mm')) {
+    const n = parseFloat(t.replace(/mm$/, '').trim());
+    if (!Number.isNaN(n)) return `${(n / 10).toFixed(1)} cm`;
+  }
+  if (t.endsWith('cm')) return t;
+  return v;
 }
-function joinDims(d?: { height?: string; width?: string; thickness?: string } | null): string | null {
-  if (!d) return null;
-  const parts = [toCmStr(d.height), toCmStr(d.width), toCmStr(d.thickness)].filter(Boolean) as string[];
-  return parts.length ? parts.join(" × ") : null;
+function pickCover(b: BookLike): string {
+  return (
+    httpsify(b.cover) ||
+    httpsify(b.book_image) ||
+    httpsify(b.imageLinks?.large) ||
+    httpsify(b.imageLinks?.medium) ||
+    httpsify(b.imageLinks?.thumbnail) ||
+    httpsify(b.imageLinks?.smallThumbnail) ||
+    '/og/og-from-upload.png'
+  )!;
 }
-/* -------------------------------------- */
+function pickAuthors(b: BookLike) {
+  if (b.authors && b.authors.length) return b.authors.join(', ');
+  if (b.author) return b.author;
+  return '';
+}
+function extractIsbn13(b?: BookLike | null): string | null {
+  const cands: Array<string | null | undefined> = [
+    b?.isbn, // <— PRIORITASKAN: dari NYTCarousel (sudah 13 digit)
+    b?.isbn13,
+    b?.primary_isbn13,
+    b?.industryIdentifiers?.find((x) => x?.type === 'ISBN_13')?.identifier,
+    b?.isbns?.find((x) => x?.isbn13)?.isbn13,
+  ];
+  for (const c of cands) {
+    if (typeof c === 'string' && /^\d{13}$/.test(c)) return c;
+  }
+  return null;
+}
 
 export default function BookModal({ open, onOpenChange, book }: Props) {
-  const [loading, setLoading] = useState(false);
-  const [full, setFull] = useState<Full | null>(null);
+  const router = useRouter();
+  if (!open) return null;
 
-  const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const title = book?.title ?? '—';
+  const author = pickAuthors(book ?? ({} as BookLike));
+  const rank = typeof book?.rank === 'number' ? book.rank : null;
+  const cover = pickCover(book ?? ({} as BookLike));
 
-  // Fetch detail hanya saat modal dibuka + ISBN ada
-  useEffect(() => {
-    const controller = new AbortController();
-    if (!open || !book?.isbn) {
-      setFull(null);
-      return () => controller.abort();
-    }
-    (async () => {
-      setLoading(true);
-      setFull(null);
-      try {
-        const r = await fetch(`/api/isbn/${encodeURIComponent(book.isbn)}`, {
-          signal: controller.signal,
-          cache: "no-store",
-        });
-        if (r.ok) {
-          const j = (await r.json()) as { found: boolean; book?: Full };
-          setFull(j?.book ?? null);
-        } else {
-          setFull(null);
-        }
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
+  const isbn13 = extractIsbn13(book);
+  const pages = book?.printedPageCount ?? book?.pageCount ?? null;
+  const dims = book?.dimensions
+    ? {
+        h: mmOrCm(book.dimensions.height ?? null),
+        w: mmOrCm(book.dimensions.width ?? null),
+        t: mmOrCm(book.dimensions.thickness ?? null),
       }
-    })();
-    return () => controller.abort();
-  }, [open, book?.isbn]);
+    : null;
+  const categories = Array.isArray(book?.categories) ? book?.categories : [];
 
-  // Lock scroll + ESC
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onEsc = (e: KeyboardEvent) => e.key === "Escape" && handleClose();
-    window.addEventListener("keydown", onEsc);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onEsc);
-    };
-  }, [open, handleClose]);
+  const rawSnippet =
+    book?.textSnippet ?? book?.nytDescription ?? book?.description ?? '';
+  const snippet = sanitize(rawSnippet);
+  const desc = sanitize(book?.description ?? '');
 
-  const title = full?.title || book?.title || "—";
-  const subtitle = full?.subtitle || "";
-  const cover =
-    httpsify(full?.imageLinks?.large) ||
-    httpsify(full?.imageLinks?.medium) ||
-    httpsify(full?.imageLinks?.thumbnail) ||
-    httpsify(full?.imageLinks?.smallThumbnail) ||
-    httpsify(book?.cover) ||
-    "/og/og-from-upload.png";
-  const metaAuthors = full?.authors?.length ? full.authors.join(", ") : book?.author || "";
-  const metaPub = [full?.publisher, full?.publishedDate].filter(Boolean).join(" · ");
-  const dim = joinDims(full?.dimensions);
-  const pages = full?.pageCount ?? null;
-
-  const safeSnippet = useMemo(() => (full?.textSnippet ? sanitizeHtml(full.textSnippet) : ""), [full?.textSnippet]);
-  const safeDesc = useMemo(() => (full?.description ? sanitizeHtml(full.description) : ""), [full?.description]);
-
-  if (!open || !book) return null;
+  const onDetail = () => {
+    if (!isbn13) return;
+    onOpenChange(false);
+    router.push(`/isbn/${isbn13}`);
+  };
 
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100]">
-      <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
-      <div className="absolute inset-3 md:inset-8 bg-white rounded-2xl shadow-soft p-4 md:p-6 overflow-auto">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3">
-            <h2 className="text-lg md:text-xl font-semibold leading-tight">
-              {title}
-              {subtitle ? <span className="block text-sm font-normal text-muted-foreground mt-0.5">{subtitle}</span> : null}
-            </h2>
-            <button
-              onClick={handleClose}
-              aria-label="Tutup"
-              className="rounded-full px-2 text-xl leading-none hover:bg-black/5"
-            >
-              ×
-            </button>
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[100] grid place-items-center bg-black/40 p-4"
+    >
+      <div className="w-full max-w-5xl rounded-2xl bg-white p-6 shadow-2xl">
+        {/* header */}
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <h3 className="text-xl font-semibold leading-snug">{title}</h3>
+          <button
+            onClick={() => onOpenChange(false)}
+            aria-label="Tutup"
+            className="rounded-full px-3 py-1 text-sm hover:bg-neutral-100"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* content */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
+          {/* cover */}
+          <div className="justify-self-center md:justify-self-start">
+            <div className="relative h-[320px] w-[220px] overflow-hidden rounded-xl bg-neutral-100">
+              <Image src={cover} alt={title} fill className="object-cover" />
+            </div>
+            {rank != null && (
+              <div className="mt-2 inline-block rounded-full bg-black px-2 py-1 text-xs text-white">
+                NYT #{rank}
+              </div>
+            )}
           </div>
 
-          {/* Grid content compact */}
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-[200px,1fr] gap-4 md:gap-6">
-            {/* Cover */}
-            <div className="relative w-[200px] h-[280px] md:w-[220px] md:h-[320px] rounded-xl overflow-hidden bg-neutral-100 justify-self-center md:justify-self-start">
-              <Image src={cover} alt={title} fill className="object-cover" sizes="220px" priority={false} />
-            </div>
-
-            {/* Right side */}
-            <div className="text-sm leading-relaxed">
-              {metaAuthors && (
-                <div className="text-[13px] text-muted-foreground">
-                  <span className="opacity-70">Penulis:</span> <b>{metaAuthors}</b>
-                </div>
-              )}
-              {metaPub && (
-                <div className="text-[13px] text-muted-foreground mt-1">
-                  <span className="opacity-70">Publikasi: </span>
-                  {metaPub}
-                </div>
-              )}
-              {typeof book.rank === "number" && book.rank > 0 && (
-                <div className="text-[13px] text-muted-foreground mt-1">
-                  <span className="opacity-70">Peringkat NYT:</span> <b>#{book.rank}</b>
-                </div>
-              )}
-
-              {!!full?.categories?.length && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {full.categories!.map((c, i) => (
-                    <span
-                      key={i}
-                      className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200"
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1 text-[13px] text-muted-foreground">
-                {full?.isbn13 && (
-                  <div>
-                    <span className="opacity-70">ISBN-13:</span> {full.isbn13}
-                  </div>
-                )}
-                {pages && (
-                  <div>
-                    <span className="opacity-70">Halaman:</span> {pages}
-                  </div>
-                )}
-                {dim && (
-                  <div>
-                    <span className="opacity-70">Dimensi:</span> {dim}
-                  </div>
-                )}
+          {/* info */}
+          <div className="space-y-3">
+            {author && (
+              <div className="text-sm">
+                <span className="opacity-60">Penulis: </span>
+                <span className="font-medium">{author}</span>
               </div>
-
-              {safeSnippet && (
-                <p className="mt-3 italic text-[13px] text-muted-foreground" dangerouslySetInnerHTML={{ __html: safeSnippet }} />
-              )}
-
-              <div className="mt-3 text-[14px]">
-                {loading ? (
-                  <span className="opacity-60">Memuat deskripsi…</span>
-                ) : safeDesc ? (
-                  <div
-                    className="leading-relaxed break-words [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
-                    dangerouslySetInnerHTML={{ __html: safeDesc }}
-                  />
-                ) : (
-                  <p className="opacity-70">(Tidak ada deskripsi dari Google Books.)</p>
-                )}
+            )}
+            {book?.publisher && (
+              <div className="text-sm">
+                <span className="opacity-60">Penerbit: </span>
+                <span className="font-medium">{book.publisher}</span>
               </div>
-
-              <div className="mt-4 flex gap-2">
-                <a href={`/isbn/${book.isbn}`} className="px-3 py-2 rounded-lg bg-amber-400 text-black text-sm">
-                  Buka halaman detail
-                </a>
-                <button onClick={handleClose} className="px-3 py-2 rounded-lg bg-neutral-200 text-sm">
-                  Tutup
-                </button>
+            )}
+            {isbn13 && (
+              <div className="text-sm">
+                <span className="opacity-60">ISBN-13: </span>
+                <span className="font-medium">{isbn13}</span>
               </div>
-            </div>
+            )}
+            {pages && (
+              <div className="text-sm">
+                <span className="opacity-60">Halaman: </span>
+                <span className="font-medium">{pages}</span>
+              </div>
+            )}
+            {dims && (dims.h || dims.w || dims.t) && (
+              <div className="text-sm">
+                <span className="opacity-60">Dimensi: </span>
+                <span className="font-medium">
+                  {[
+                    dims.h ? `H ${dims.h}` : null,
+                    dims.w ? `W ${dims.w}` : null,
+                    dims.t ? `T ${dims.t}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' × ')}
+                </span>
+              </div>
+            )}
+            {!!categories?.length && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {categories.slice(0, 6).map((c) => (
+                  <span
+                    key={c}
+                    className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            )}
+            {snippet && (
+              <p className="pt-2 text-sm italic text-neutral-700">{snippet}</p>
+            )}
+            {desc && (
+              <p className="text-sm leading-relaxed text-neutral-800">{desc}</p>
+            )}
           </div>
         </div>
+
+        {/* actions */}
+        <div className="mt-6 flex flex-wrap gap-2">
+          <button
+            onClick={onDetail}
+            disabled={!isbn13}
+            className={`rounded-lg px-4 py-2 text-sm ${
+              isbn13
+                ? 'bg-black text-white hover:opacity-90'
+                : 'cursor-not-allowed bg-neutral-200 text-neutral-500'
+            }`}
+          >
+            Detail Buku
+          </button>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="rounded-lg bg-neutral-100 px-4 py-2 text-sm"
+          >
+            Tutup
+          </button>
+        </div>
+
+        {!isbn13 && (
+          <div className="mt-2 text-xs text-amber-600">
+            ISBN-13 tidak terdeteksi dari item ini. Silakan cari manual via menu
+            <span className="font-semibold"> Cari Buku</span>.
+          </div>
+        )}
       </div>
     </div>
   );

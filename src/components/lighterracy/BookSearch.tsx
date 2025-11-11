@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Result } from "@zxing/library";
-import type { SearchItem } from "@/types/search-lite"; // jika dipisah
-
+import * as ZX from "@zxing/library";
+import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
 
 declare global {
   interface Window {
@@ -21,11 +20,17 @@ function cleanIsbn(raw: string) {
 }
 function isIsbnCandidate(s: string) {
   const d = s.replace(/\D/g, "");
-  return (
-    (d.length === 13 && (d.startsWith("978") || d.startsWith("979"))) ||
-    d.length === 10
-  );
+  return (d.length === 13 && (d.startsWith("978") || d.startsWith("979"))) || d.length === 10;
 }
+function errMsg(e: unknown) {
+  return e instanceof Error ? e.message : typeof e === "string" ? e : "Unknown error";
+}
+function hasProp<T extends string>(obj: unknown, prop: T): obj is Record<T, unknown> {
+  return !!obj && typeof obj === "object" && prop in obj;
+}
+
+type ZoomCaps = number | { min?: number; max?: number; step?: number };
+type TrackCaps = Partial<{ torch: boolean; zoom: ZoomCaps }>;
 
 export default function BookSearch() {
   const router = useRouter();
@@ -38,19 +43,20 @@ export default function BookSearch() {
   const [cams, setCams] = useState<MediaDeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
 
-  // hasil “locked”
   const [detected, setDetected] = useState<string | null>(null);
 
-  // controls kamera
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [zoomAvailable, setZoomAvailable] = useState(false);
   const [zoom, setZoom] = useState<number>(1);
-  const zoomRangeRef = useRef<{ min: number; max: number; step: number }>({
+  // <- pakai state untuk dipakai di render (hindari akses ref di JSX)
+  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number }>({
     min: 1,
     max: 1,
     step: 0.1,
   });
+  // ref tetap disimpan jika dibutuhkan non-render usage
+  const zoomRangeRef = useRef<{ min: number; max: number; step: number }>({ min: 1, max: 1, step: 0.1 });
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -64,52 +70,54 @@ export default function BookSearch() {
     router.push(`/isbn/${encodeURIComponent(code)}`);
   };
 
-  // ====== CAMERA HELPERS ======
-  function getTrack() {
-    return streamRef.current?.getVideoTracks?.()[0] || null;
+  function getTrack(): MediaStreamTrack | null {
+    return streamRef.current?.getVideoTracks?.()[0] ?? null;
   }
+
   async function applyTorch(on: boolean) {
     const track = getTrack();
-    const caps: any = track?.getCapabilities?.() || {};
-    if (!("torch" in caps)) return;
-    await track!.applyConstraints({ advanced: [{ torch: on }] as any });
+    if (!track) return;
+    const getCaps = (track as { getCapabilities?: () => MediaTrackCapabilities } | null)?.getCapabilities;
+    const caps = typeof getCaps === "function" ? (getCaps.call(track) as unknown as TrackCaps) : undefined;
+    if (!caps || !hasProp(caps, "torch")) return;
+    const constraints = { advanced: [{ torch: on }] } as unknown as MediaTrackConstraints;
+    await track.applyConstraints(constraints);
     setTorchOn(on);
   }
+
   async function applyZoom(z: number) {
     const track = getTrack();
-    const caps: any = track?.getCapabilities?.() || {};
-    if (!("zoom" in caps)) return;
-    await track!.applyConstraints({ advanced: [{ zoom: z }] as any });
+    if (!track) return;
+    const getCaps = (track as { getCapabilities?: () => MediaTrackCapabilities } | null)?.getCapabilities;
+    const caps = typeof getCaps === "function" ? (getCaps.call(track) as unknown as TrackCaps) : undefined;
+    if (!caps || !hasProp(caps, "zoom")) return;
+    const constraints = { advanced: [{ zoom: z }] } as unknown as MediaTrackConstraints;
+    await track.applyConstraints(constraints);
     setZoom(z);
   }
 
-  // ====== START SCAN (realtime) ======
   async function startScan() {
     setError(null);
-    setDetected(null); // reset hasil
+    setDetected(null);
 
     if (!window.isSecureContext && location.hostname !== "localhost") {
       setError("Kamera butuh HTTPS atau localhost.");
       return;
     }
 
-    // Enumerate + pilih device
     try {
       const tmp = await navigator.mediaDevices.getUserMedia({ video: true });
       tmp.getTracks().forEach((t) => t.stop());
-    } catch (e: any) {
-      setError(e?.message || "Akses kamera ditolak / tidak tersedia.");
+    } catch (e) {
+      setError(errMsg(e));
       return;
     }
 
     const all = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput");
     setCams(all);
-    const best =
-      all.find((d) => /rear|back|environment|usb/i.test(d.label))?.deviceId ||
-      all[0]?.deviceId;
+    const best = all.find((d) => /rear|back|environment|usb/i.test(d.label))?.deviceId || all[0]?.deviceId;
     setDeviceId(best);
 
-    // hidupkan kamera
     try {
       streamRef.current = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -123,27 +131,40 @@ export default function BookSearch() {
         videoRef.current.srcObject = streamRef.current;
         await videoRef.current.play();
       }
-    } catch (e: any) {
-      setError(e?.message || "Gagal mengakses kamera.");
+    } catch (e) {
+      setError(errMsg(e));
       return;
     }
     setScanning(true);
 
-    // cek torch/zoom
+    // cek torch/zoom capability → sinkron ke state (untuk render)
     try {
-      const caps: any = getTrack()?.getCapabilities?.() || {};
-      if (typeof caps.torch !== "undefined") setTorchAvailable(true);
-      else setTorchAvailable(false);
+      const track = getTrack();
+      const getCaps = (track as { getCapabilities?: () => MediaTrackCapabilities } | null)?.getCapabilities;
+      const caps = typeof getCaps === "function" ? (getCaps.call(track) as unknown as TrackCaps) : undefined;
 
-      if (typeof caps.zoom !== "undefined") {
+      setTorchAvailable(!!caps && !!caps.torch);
+
+      if (caps && hasProp(caps, "zoom")) {
         setZoomAvailable(true);
-        zoomRangeRef.current = {
-          min: caps.zoom.min ?? 1,
-          max: caps.zoom.max ?? 1,
-          step: caps.zoom.step ?? 0.1,
-        };
-        setZoom(caps.zoom.min ?? 1);
-        await applyZoom(caps.zoom.min ?? 1);
+        const z = caps.zoom as ZoomCaps;
+
+        if (typeof z === "number") {
+          const zr = { min: 1, max: z || 1, step: 0.1 };
+          zoomRangeRef.current = zr;
+          setZoomRange(zr);
+          setZoom(1);
+          await applyZoom(1);
+        } else {
+          const min = Number(z.min ?? 1);
+          const max = Number(z.max ?? 1);
+          const step = Number(z.step ?? 0.1);
+          const zr = { min, max, step };
+          zoomRangeRef.current = zr;
+          setZoomRange(zr);
+          setZoom(min);
+          await applyZoom(min);
+        }
       } else {
         setZoomAvailable(false);
       }
@@ -152,7 +173,7 @@ export default function BookSearch() {
       setZoomAvailable(false);
     }
 
-    // A) BarcodeDetector (frame-by-frame)
+    // A) BarcodeDetector
     if (window.BarcodeDetector) {
       try {
         const detector = new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "code_128"] });
@@ -167,7 +188,8 @@ export default function BookSearch() {
           }
           const w = 640;
           const h = Math.floor((v.videoHeight / v.videoWidth) * w);
-          canvas.width = w; canvas.height = h;
+          canvas.width = w;
+          canvas.height = h;
           ctx?.drawImage(v, 0, 0, w, h);
           const bmp = await createImageBitmap(canvas);
           try {
@@ -180,42 +202,37 @@ export default function BookSearch() {
                 return;
               }
             }
-          } catch {}
+          } catch {
+            // continue
+          }
           rafRef.current = requestAnimationFrame(loop);
         };
         rafRef.current = requestAnimationFrame(loop);
         return; // selesai path A
       } catch {
-        // lanjut fallback
+        // fallback ke ZXing
       }
     }
 
     // B) ZXing fallback
     try {
-      const [{ BrowserMultiFormatReader }, ZX] = await Promise.all([
-        import("@zxing/browser"),
-        import("@zxing/library"),
-      ]);
-      const { BarcodeFormat, DecodeHintType } = ZX;
-
-      const hints = new Map();
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-        BarcodeFormat.EAN_13,
-        BarcodeFormat.EAN_8,
-        BarcodeFormat.CODE_128,
+      const hints = new Map<ZX.DecodeHintType, unknown>();
+      hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [
+        ZX.BarcodeFormat.EAN_13,
+        ZX.BarcodeFormat.EAN_8,
+        ZX.BarcodeFormat.CODE_128,
       ]);
       const reader = new BrowserMultiFormatReader(hints);
 
-      // stop stream kita → ZXing yang handle
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
       }
 
-      const controls = await reader.decodeFromVideoDevice(
+      const controls: IScannerControls = await reader.decodeFromVideoDevice(
         deviceId,
         videoRef.current!,
-        (res?: Result) => {
+        (res?: ZX.Result) => {
           if (!res) return;
           const digits = res.getText().replace(/\D/g, "");
           if (isIsbnCandidate(digits)) {
@@ -223,31 +240,42 @@ export default function BookSearch() {
           }
         }
       );
-      stopZxingRef.current = () => controls?.stop?.();
-    } catch (e: any) {
-      setError(e?.message || "Gagal memulai ZXing fallback.");
+      stopZxingRef.current = () => controls.stop();
+    } catch (e) {
+      setError(errMsg(e));
       stopScan();
     }
   }
 
   function lockResult(isbn: string) {
-    try { navigator.vibrate?.(40); } catch {}
+    try {
+      navigator.vibrate?.(40);
+    } catch {
+      /* noop */
+    }
     setDetected(isbn);
-    stopScan(); // hentikan kamera/loop → “locked”
+    stopScan();
   }
 
   function stopScan() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
-    if (stopZxingRef.current) { try { stopZxingRef.current(); } catch {} ; stopZxingRef.current = null; }
+    if (stopZxingRef.current) {
+      try {
+        stopZxingRef.current();
+      } catch {
+        /* noop */
+      }
+      stopZxingRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
-    if (videoRef.current) {
-      const v = videoRef.current as HTMLVideoElement & { srcObject?: MediaStream | null };
+    const v = videoRef.current as (HTMLVideoElement & { srcObject?: MediaStream | null }) | null;
+    if (v) {
       v.pause();
-      v.srcObject = null as any;
+      v.srcObject = null;
       v.removeAttribute("src");
     }
     setTorchOn(false);
@@ -255,50 +283,47 @@ export default function BookSearch() {
   }
 
   useEffect(() => () => stopScan(), []);
-  useEffect(() => { if (mode === "type" && scanning) stopScan(); }, [mode, scanning]);
+  useEffect(() => {
+    if (mode === "type" && scanning) stopScan();
+  }, [mode, scanning]);
 
-  // ====== STILL IMAGE PIPELINE (capture/upload) ======
   async function decodeImageData(imageData: ImageData): Promise<string | null> {
-    const ZX = await import("@zxing/library");
-    const { MultiFormatReader, RGBLuminanceSource, HybridBinarizer, BinaryBitmap, BarcodeFormat, DecodeHintType } = ZX;
-
-    const hints = new Map();
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    const reader = new ZX.MultiFormatReader();
+    const hints = new Map<ZX.DecodeHintType, unknown>();
+    hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [
       ZX.BarcodeFormat.EAN_13,
       ZX.BarcodeFormat.EAN_8,
       ZX.BarcodeFormat.CODE_128,
     ]);
-    hints.set(DecodeHintType.TRY_HARDER, true);
+    hints.set(ZX.DecodeHintType.TRY_HARDER, true);
+    reader.setHints(hints);
 
-    const reader = new MultiFormatReader();
-    reader.setHints(hints as any);
-
-    // helper try-decode (with optional pre-processing)
     const tryDecode = () => {
-      const luminance = new RGBLuminanceSource(imageData.data, imageData.width, imageData.height);
-      const binary = new HybridBinarizer(luminance);
-      const bitmap = new BinaryBitmap(binary);
+      const luminance = new ZX.RGBLuminanceSource(imageData.data, imageData.width, imageData.height);
+      const binary = new ZX.HybridBinarizer(luminance);
+      const bitmap = new ZX.BinaryBitmap(binary);
       const res = reader.decode(bitmap);
       return res.getText?.() as string;
     };
 
-    // attempt 1: original
     try {
       const txt = tryDecode();
       if (txt) return txt;
-    } catch {}
+    } catch {
+      /* try next */
+    }
 
-    // attempt 2: contrast boost
-    const boosted = boostContrast(imageData, 0.35, 10); // +kontras, +brightness kecil
+    const boosted = boostContrast(imageData, 0.35, 10);
     try {
       const luminance = new ZX.RGBLuminanceSource(boosted.data, boosted.width, boosted.height);
       const binary = new ZX.HybridBinarizer(luminance);
       const bitmap = new ZX.BinaryBitmap(binary);
       const res = reader.decode(bitmap);
       if (res?.getText()) return res.getText();
-    } catch {}
+    } catch {
+      /* try next */
+    }
 
-    // attempt 3: rotate 90 (jaga-jaga barcode tegak)
     try {
       const rotated = rotateImageData(boosted, 90);
       const luminance = new ZX.RGBLuminanceSource(rotated.data, rotated.width, rotated.height);
@@ -306,7 +331,9 @@ export default function BookSearch() {
       const bitmap = new ZX.BinaryBitmap(binary);
       const res = reader.decode(bitmap);
       if (res?.getText()) return res.getText();
-    } catch {}
+    } catch {
+      /* give up */
+    }
 
     return null;
   }
@@ -314,12 +341,12 @@ export default function BookSearch() {
   function boostContrast(src: ImageData, contrast = 0.3, brightness = 0): ImageData {
     const out = new ImageData(new Uint8ClampedArray(src.data), src.width, src.height);
     const c = Math.max(-1, Math.min(1, contrast));
-    const f = (259 * (c * 255 + 255)) / (255 * (259 - c * 255)); // contrast factor
-    const b = brightness; // [-255..255]
+    const f = (259 * (c * 255 + 255)) / (255 * (259 - c * 255));
+    const b = brightness;
     for (let i = 0; i < out.data.length; i += 4) {
-      out.data[i]   = clamp(f * (out.data[i]   - 128) + 128 + b);
-      out.data[i+1] = clamp(f * (out.data[i+1] - 128) + 128 + b);
-      out.data[i+2] = clamp(f * (out.data[i+2] - 128) + 128 + b);
+      out.data[i] = clamp(f * (out.data[i] - 128) + 128 + b);
+      out.data[i + 1] = clamp(f * (out.data[i + 1] - 128) + 128 + b);
+      out.data[i + 2] = clamp(f * (out.data[i + 2] - 128) + 128 + b);
     }
     return out;
   }
@@ -327,15 +354,17 @@ export default function BookSearch() {
     const rad = (deg * Math.PI) / 180;
     const sin = Math.abs(Math.sin(rad));
     const cos = Math.abs(Math.cos(rad));
-    const w = src.width, h = src.height;
+    const w = src.width,
+      h = src.height;
     const newW = Math.floor(w * cos + h * sin);
     const newH = Math.floor(w * sin + h * cos);
     const cvs = document.createElement("canvas");
-    cvs.width = newW; cvs.height = newH;
+    cvs.width = newW;
+    cvs.height = newH;
     const ctx = cvs.getContext("2d")!;
-    // put src to offscreen canvas
     const tmp = document.createElement("canvas");
-    tmp.width = w; tmp.height = h;
+    tmp.width = w;
+    tmp.height = h;
     const tctx = tmp.getContext("2d")!;
     tctx.putImageData(src, 0, 0);
     ctx.translate(newW / 2, newH / 2);
@@ -343,19 +372,20 @@ export default function BookSearch() {
     ctx.drawImage(tmp, -w / 2, -h / 2);
     return ctx.getImageData(0, 0, newW, newH);
   }
-  function clamp(v: number) { return Math.max(0, Math.min(255, v | 0)); }
+  function clamp(v: number) {
+    return Math.max(0, Math.min(255, v | 0));
+  }
 
   async function captureAndDecode() {
     setError(null);
     if (!videoRef.current) return;
     const v = videoRef.current;
-
-    // ambil frame ke canvas (besar biar detail)
     const scale = 1000 / Math.max(v.videoWidth, v.videoHeight);
     const w = Math.max(600, Math.floor(v.videoWidth * (scale || 1)));
     const h = Math.max(400, Math.floor(v.videoHeight * (scale || 1)));
     const cvs = document.createElement("canvas");
-    cvs.width = w; cvs.height = h;
+    cvs.width = w;
+    cvs.height = h;
     const ctx = cvs.getContext("2d")!;
     ctx.drawImage(v, 0, 0, w, h);
     const id = ctx.getImageData(0, 0, w, h);
@@ -377,7 +407,7 @@ export default function BookSearch() {
     const url = URL.createObjectURL(file);
     await new Promise<void>((res, rej) => {
       img.onload = () => res();
-      img.onerror = (e) => rej(e);
+      img.onerror = () => rej(new Error("Cannot load image"));
       img.src = url;
     });
     const maxW = 1400;
@@ -385,7 +415,8 @@ export default function BookSearch() {
     const w = Math.floor(img.width * ratio);
     const h = Math.floor(img.height * ratio);
     const cvs = document.createElement("canvas");
-    cvs.width = w; cvs.height = h;
+    cvs.width = w;
+    cvs.height = h;
     const ctx = cvs.getContext("2d")!;
     ctx.drawImage(img, 0, 0, w, h);
     const id = ctx.getImageData(0, 0, w, h);
@@ -402,13 +433,21 @@ export default function BookSearch() {
     setError("Gagal membaca gambar terpilih. Coba gambar lain / cropping barcode.");
   }
 
-  // ========= UI =========
   return (
     <div className="w-full max-w-xl rounded-2xl bg-white/80 p-4 shadow">
-      {/* keyframes scanline */}
       <style jsx global>{`
-        @keyframes scanlineY { 0% { top: 12%; } 100% { top: 78%; } }
-        .scanline { animation: scanlineY 2.2s ease-in-out infinite alternate; will-change: top; }
+        @keyframes scanlineY {
+          0% {
+            top: 12%;
+          }
+          100% {
+            top: 78%;
+          }
+        }
+        .scanline {
+          animation: scanlineY 2.2s ease-in-out infinite alternate;
+          will-change: top;
+        }
       `}</style>
 
       <div className="flex items-center justify-between gap-2">
@@ -433,7 +472,6 @@ export default function BookSearch() {
         </div>
       </div>
 
-      {/* MODE: KETIK */}
       {mode === "type" && (
         <>
           <div className="mt-3 flex gap-2">
@@ -453,12 +491,15 @@ export default function BookSearch() {
           </div>
           <div className="mt-3">
             <label className="text-xs opacity-60 mr-2">Atau unggah foto barcode:</label>
-            <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && decodeFromFile(e.target.files[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => e.target.files?.[0] && decodeFromFile(e.target.files[0])}
+            />
           </div>
         </>
       )}
 
-      {/* MODE: SCAN */}
       {mode === "scan" && (
         <div className="mt-3">
           {!scanning ? (
@@ -473,7 +514,9 @@ export default function BookSearch() {
                     title="Pilih kamera"
                   >
                     {cams.map((c) => (
-                      <option key={c.deviceId} value={c.deviceId}>{c.label || "Camera"}</option>
+                      <option key={c.deviceId} value={c.deviceId}>
+                        {c.label || "Camera"}
+                      </option>
                     ))}
                   </select>
                 )}
@@ -484,10 +527,8 @@ export default function BookSearch() {
             </div>
           ) : (
             <div className="space-y-2">
-              {/* Video container fixed ratio */}
               <div className="relative rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "3 / 2" }}>
                 <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
-                {/* Frame & moving scanline */}
                 <div className="pointer-events-none absolute inset-0 grid place-items-center">
                   <div className="w-[70%] max-w-[520px] aspect-[3/1] rounded-xl border-2 border-white/80 relative">
                     <div
@@ -501,26 +542,21 @@ export default function BookSearch() {
                 </div>
               </div>
 
-              {/* Controls: torch/zoom/capture/stop */}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   {torchAvailable && (
-                    <button
-                      onClick={() => applyTorch(!torchOn)}
-                      className="px-3 py-2 rounded-lg bg-gray-200 text-sm"
-                    >
+                    <button onClick={() => applyTorch(!torchOn)} className="px-3 py-2 rounded-lg bg-gray-200 text-sm">
                       {torchOn ? "Matikan Flash" : "Nyalakan Flash"}
                     </button>
                   )}
-
                   {zoomAvailable && (
                     <div className="flex items-center gap-2">
                       <span className="text-xs opacity-60">Zoom</span>
                       <input
                         type="range"
-                        min={zoomRangeRef.current.min}
-                        max={zoomRangeRef.current.max}
-                        step={zoomRangeRef.current.step}
+                        min={zoomRange.min}
+                        max={zoomRange.max}
+                        step={zoomRange.step}
                         value={zoom}
                         onChange={(e) => applyZoom(parseFloat(e.target.value))}
                       />
@@ -529,7 +565,10 @@ export default function BookSearch() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button onClick={captureAndDecode} className="px-3 py-2 rounded-lg bg-amber-400 text-black text-sm">
+                  <button
+                    onClick={captureAndDecode}
+                    className="px-3 py-2 rounded-lg bg-amber-400 text-black text-sm"
+                  >
                     Ambil Foto
                   </button>
                   <button onClick={stopScan} className="px-3 py-2 rounded-lg bg-gray-200 text-sm">
@@ -546,7 +585,6 @@ export default function BookSearch() {
         </div>
       )}
 
-      {/* Kartu hasil “locked” */}
       {detected && (
         <div className="mt-3 rounded-xl border bg-white p-3">
           <div className="text-sm">ISBN terdeteksi:</div>
@@ -559,7 +597,11 @@ export default function BookSearch() {
               Buka detail
             </button>
             <button
-              onClick={() => { setDetected(null); setMode("scan"); startScan(); }}
+              onClick={() => {
+                setDetected(null);
+                setMode("scan");
+                startScan();
+              }}
               className="px-3 py-2 rounded-lg bg-gray-200 text-sm"
             >
               Scan lagi

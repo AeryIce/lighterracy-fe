@@ -1,219 +1,214 @@
+// src/components/lighterracy/BookDetailModal.tsx
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback } from "react";
+
+type Dim = { height?: string; width?: string; thickness?: string } | null;
 
 type Book = {
   title: string;
   subtitle?: string;
-  authors?: string[];
-  publisher?: string;
-  publishedDate?: string;
+  authors: string[];
+  publisher: string;
+  publishedDate: string;
+  categories: string[];
   description?: string;
   textSnippet?: string;
-  categories?: string[];
-  isbn13?: string | null;
-  pageCount?: number | null;
-  dimensions?: { height?: string; width?: string; thickness?: string } | null;
-  averageRating?: number | null;
-  ratingsCount?: number | null;
-  imageLinks?: { smallThumbnail?: string; thumbnail?: string; medium?: string; large?: string } | null;
-  previewLink?: string;
-  infoLink?: string;
+  isbn13: string | null;
+  pageCount: number | null;
+  dimensions: Dim;
+  imageLinks?: { thumbnail?: string; smallThumbnail?: string; medium?: string; large?: string } | null;
   cover?: string | null;
 };
 
-type Props = { open?: boolean; book: Book | null };
+type Props = {
+  open?: boolean; // dipakai pada page /isbn/[code] agar tampil sebagai konten modal
+  book: Book | null;
+};
 
-function decodeEntities(s = ""): string {
-  return s
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;|&#39;/g, "'")
+/* -------------------- Helpers -------------------- */
+
+// Decode entity umum tanpa akses DOM (aman untuk SSR)
+function decodeEntities(input = ""): string {
+  return input
+    .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
-    .replace(/&nbsp;/g, " ");
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'");
 }
+
+// Izinkan tag aman & rapikan paragraf
 function sanitizeHtml(input = ""): string {
   if (!input) return "";
-  const decoded = decodeEntities(input);
-  let s = decoded.replace(/<(\/?)(?!b|strong|i|em|br|p|ul|ol|li|sub|sup|a)([a-z0-9-]+)(\s[^>]*)?>/gi, "");
-  s = s.replace(/<(b|strong|i|em|br|p|ul|ol|li|sub|sup)\b[^>]*>/gi, "<$1>");
-  s = s.replace(/<a\b([^>]*)>/gi, (_m, attrs) => {
-    const m = /\bhref\s*=\s*(['"]?)([^"' >]+)\1/i.exec(attrs || "");
-    const href = m ? m[2] : "";
-    if (!/^https?:\/\//i.test(href)) return "<span>";
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer">`;
-  });
+  // decode entities dahulu
+  let s = decodeEntities(input);
+
+  // Normalisasi line break → <br/>
+  s = s.replace(/\r\n|\r|\n/g, "<br/>");
+
+  // Escape semua tag…
+  s = s.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // …lalu kembalikan tag yang diizinkan
+  // (b, strong, i, em, br, p, ul, ol, li)
+  s = s.replace(
+    /&lt;(\/?(?:b|strong|i|em|br|p|ul|ol|li))&gt;/gi,
+    "<$1>"
+  );
+
+  // Rapikan <br/><br/> menjadi pemisah paragraf
+  s = s.replace(/(?:<br\s*\/?>\s*){2,}/gi, "<br/><br/>");
+
   return s;
 }
-function httpsify(u?: string | null) {
-  if (!u) return u ?? null;
-  return u.startsWith("http://") ? u.replace("http://", "https://") : u;
+
+// Ambil URL cover terbaik
+function pickCover(b: Book | null): string {
+  const cand =
+    b?.cover ||
+    b?.imageLinks?.large ||
+    b?.imageLinks?.medium ||
+    b?.imageLinks?.thumbnail ||
+    b?.imageLinks?.smallThumbnail;
+  return cand || "/og/og-from-upload.png";
 }
-function toCmStr(txt?: string): string | null {
-  if (!txt) return null;
-  const num = parseFloat(txt.replace(",", "."));
-  if (Number.isNaN(num)) return txt;
-  const isIn = /in(ch|ches)?|"/i.test(txt);
-  const cm = isIn ? Math.round(num * 2.54 * 10) / 10 : num;
-  return `${cm} cm`;
+
+// Konversi string dimensi (bisa "8.5 in" / "21 cm") → cm (angka)
+function parseToCm(s?: string): number | null {
+  if (!s) return null;
+  const m = s.match(/([\d.]+)\s*(cm|mm|in|inch|inches|")/i);
+  if (!m) return null;
+  const val = parseFloat(m[1]);
+  const unit = m[2].toLowerCase();
+  if (Number.isNaN(val)) return null;
+  if (unit === "cm") return val;
+  if (unit === "mm") return val / 10;
+  // inch family
+  return val * 2.54;
 }
-function joinDims(d?: { height?: string; width?: string; thickness?: string } | null): string | null {
+
+function dimsToText(d: Dim): string | null {
   if (!d) return null;
-  const parts = [toCmStr(d.height), toCmStr(d.width), toCmStr(d.thickness)].filter(Boolean) as string[];
-  return parts.length ? parts.join(" × ") : null;
+  const h = parseToCm(d.height);
+  const w = parseToCm(d.width);
+  const t = parseToCm(d.thickness);
+  const parts: string[] = [];
+  if (h) parts.push(`${h.toFixed(1)} cm`);
+  if (w) parts.push(`${w.toFixed(1)} cm`);
+  if (t) parts.push(`${t.toFixed(1)} cm`);
+  if (!parts.length) return null;
+  return parts.join(" × ");
 }
 
-export default function BookDetailModal({ open = true, book }: Props) {
-  const router = useRouter();
-  const handleClose = useCallback(() => {
-    try {
-      router.back();
-    } catch {
-      router.push("/");
-    }
-  }, [router]);
+/* -------------------- Component -------------------- */
 
-  // Lock scroll + ESC
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onEsc = (e: KeyboardEvent) => e.key === "Escape" && handleClose();
-    window.addEventListener("keydown", onEsc);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onEsc);
-    };
-  }, [open, handleClose]);
-
+export default function BookDetailModal({ book }: Props) {
+  const cover = pickCover(book);
   const title = book?.title || "—";
-  const subtitle = book?.subtitle || "";
+  const subtitle = book?.subtitle?.trim();
   const authors = (book?.authors ?? []).join(", ");
-  const pub = [book?.publisher, book?.publishedDate].filter(Boolean).join(" · ");
-  const cover =
-    httpsify(book?.cover) ||
-    httpsify(book?.imageLinks?.large) ||
-    httpsify(book?.imageLinks?.medium) ||
-    httpsify(book?.imageLinks?.thumbnail) ||
-    httpsify(book?.imageLinks?.smallThumbnail) ||
-    "/og/og-from-upload.png";
-  const dim = joinDims(book?.dimensions);
+  const publisher =
+    [book?.publisher, book?.publishedDate].filter(Boolean).join(" · ") || "";
+  const cats = book?.categories ?? [];
+  const isbn13 = book?.isbn13 || "—";
   const pages = book?.pageCount ?? null;
+  const dims = dimsToText(book?.dimensions ?? null);
 
-  const safeSnippet = useMemo(() => (book?.textSnippet ? sanitizeHtml(book.textSnippet) : ""), [book?.textSnippet]);
-  const safeDesc = useMemo(() => (book?.description ? sanitizeHtml(book.description) : ""), [book?.description]);
+  const renderHtml = useCallback((html: string) => {
+    return { __html: sanitizeHtml(html) };
+  }, []);
 
-  // Tetap modal, biar konsisten UX
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100]">
-      <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
-      <div className="absolute inset-3 md:inset-8 bg-white rounded-2xl shadow-soft p-4 md:p-6 overflow-auto">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-lg md:text-xl font-semibold leading-tight">
-              {title}
-              {subtitle ? <span className="block text-sm font-normal text-muted-foreground mt-0.5">{subtitle}</span> : null}
-            </h1>
-            <button
-              onClick={handleClose}
-              aria-label="Tutup"
-              className="rounded-full px-2 text-xl leading-none hover:bg-black/5"
-            >
-              ×
-            </button>
+    <div className="p-6 md:p-8">
+      <div className="grid grid-cols-1 md:grid-cols-[260px,1fr] gap-6 md:gap-8">
+        {/* Cover */}
+        <div className="justify-self-center md:justify-self-start">
+          <div className="relative w-[220px] h-[320px] md:w-[240px] md:h-[360px] rounded-xl overflow-hidden bg-neutral-100 shadow">
+            <Image
+              src={cover}
+              alt={title}
+              fill
+              className="object-cover"
+              sizes="240px"
+            />
           </div>
+        </div>
 
-          {/* Grid content compact */}
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-[200px,1fr] gap-4 md:gap-6">
-            {/* Cover */}
-            <div className="relative w-[200px] h-[280px] md:w-[220px] md:h-[320px] rounded-xl overflow-hidden bg-neutral-100 justify-self-center md:justify-self-start">
-              <Image src={cover || "/og/og-from-upload.png"} alt={title} fill className="object-cover" sizes="220px" />
+        {/* Info */}
+        <div className="space-y-3">
+          <h1 className="text-2xl font-semibold leading-snug">{title}</h1>
+          {subtitle ? (
+            <div className="text-sm text-neutral-600">{subtitle}</div>
+          ) : null}
+
+          {authors && (
+            <div className="text-sm">
+              <span className="text-neutral-500">Penulis: </span>
+              <span className="font-medium">{authors}</span>
             </div>
+          )}
 
-            {/* Right side */}
-            <div className="text-sm leading-relaxed">
-              {authors && (
-                <div className="text-[13px] text-muted-foreground">
-                  <span className="opacity-70">Penulis:</span> <b>{authors}</b>
-                </div>
-              )}
-              {pub && (
-                <div className="text-[13px] text-muted-foreground mt-1">
-                  <span className="opacity-70">Publikasi: </span>
-                  {pub}
-                </div>
-              )}
+          {publisher && (
+            <div className="text-sm">
+              <span className="text-neutral-500">Publikasi: </span>
+              {publisher}
+            </div>
+          )}
 
-              {!!(book?.categories?.length ?? 0) && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {book!.categories!.map((c, i) => (
-                    <span
-                      key={i}
-                      className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200"
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
-              )}
+          {/* Kategori */}
+          {cats.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {cats.map((c) => (
+                <span
+                  key={c}
+                  className="inline-block rounded-full bg-amber-100 text-amber-900 text-xs px-2 py-1"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+          )}
 
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1 text-[13px] text-muted-foreground">
-                {book?.isbn13 && (
-                  <div>
-                    <span className="opacity-70">ISBN-13:</span> {book.isbn13}
-                  </div>
-                )}
-                {pages && (
-                  <div>
-                    <span className="opacity-70">Halaman:</span> {pages}
-                  </div>
-                )}
-                {dim && (
-                  <div>
-                    <span className="opacity-70">Dimensi:</span> {dim}
-                  </div>
-                )}
-              </div>
-
-              {safeSnippet && (
-                <p className="mt-3 italic text-[13px] text-muted-foreground" dangerouslySetInnerHTML={{ __html: safeSnippet }} />
-              )}
-
-              <div className="mt-3 text-[14px]">
-                {safeDesc ? (
-                  <div
-                    className="leading-relaxed break-words [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
-                    dangerouslySetInnerHTML={{ __html: safeDesc }}
-                  />
-                ) : (
-                  <p className="opacity-70">(Tidak ada deskripsi dari Google Books.)</p>
-                )}
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                {book?.infoLink ? (
-                  <a
-                    href={book.infoLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-2 rounded-lg bg-black text-white text-sm"
-                  >
-                    Buka di Google Books
-                  </a>
-                ) : null}
-                <button onClick={handleClose} className="px-3 py-2 rounded-lg bg-neutral-200 text-sm">
-                  Tutup
-                </button>
-              </div>
+          {/* ISBN, halaman, dimensi */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-sm">
+            <div>
+              <div className="text-neutral-500">ISBN-13</div>
+              <div className="font-medium tracking-wide">{isbn13}</div>
+            </div>
+            <div>
+              <div className="text-neutral-500">Halaman</div>
+              <div className="font-medium">{pages ?? "—"}</div>
+            </div>
+            <div>
+              <div className="text-neutral-500">Dimensi</div>
+              <div className="font-medium">{dims ?? "—"}</div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Snippet (miring) */}
+      {book?.textSnippet ? (
+        <p
+          className="mt-6 italic text-neutral-700"
+          dangerouslySetInnerHTML={renderHtml(book.textSnippet)}
+        />
+      ) : null}
+
+      {/* Deskripsi (fallback: jika tidak ada, tulis info singkat) */}
+      <div className="mt-4 text-[15px] leading-relaxed">
+        {book?.description ? (
+          <div
+            dangerouslySetInnerHTML={renderHtml(book.description)}
+          />
+        ) : (
+          <div className="text-neutral-600">
+            (Tidak ada deskripsi dari Google Books.)
+          </div>
+        )}
       </div>
     </div>
   );
