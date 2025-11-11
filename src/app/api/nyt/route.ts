@@ -1,47 +1,58 @@
 import { NextResponse } from "next/server";
 
-type NYTApiBook = {
-  primary_isbn13?: string;
-  isbn13?: string;
-  isbns?: Array<{ isbn13?: string }>;
+const REVALIDATE = 60 * 60; // 1 jam
+
+type NytIsbn = { isbn10?: string; isbn13?: string };
+type NytBook = {
   title?: string;
   author?: string;
   rank?: number;
   book_image?: string;
-  description?: string;
+  isbns?: NytIsbn[];
 };
-type NYTApiResponse = {
-  results?: {
-    list_name?: string;
-    updated?: string;
-    books?: NYTApiBook[];
-  } | null;
+type NytResults = {
+  list_name?: string;
+  published_date?: string;
+  books?: NytBook[];
 };
+type NytResp = { results?: NytResults };
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const list = searchParams.get("list") || "trade-fiction-paperback";
+  const key = process.env.NYT_API_KEY ?? process.env.NYT_BOOKS_API_KEY ?? "";
 
-  const key = process.env.NYT_API_KEY;
-  if (!key) return NextResponse.json({ error: "Missing NYT_API_KEY" }, { status: 500 });
+  // Kalau key kosong, tetap balikin struktur yang Carousel kamu pakai (fail-soft)
+  if (!key) {
+    return NextResponse.json({ books: [], list_name: list, updated: "" });
+  }
 
-  const url = `https://api.nytimes.com/svc/books/v3/lists/current/${encodeURIComponent(list)}.json?api-key=${key}`;
-  const upstream = await fetch(url, { next: { revalidate: 3600 } });
-  if (!upstream.ok) return NextResponse.json({ error: "Upstream error" }, { status: 502 });
+  const qs = new URLSearchParams({ "api-key": key, offset: "0" });
+  const url = `https://api.nytimes.com/svc/books/v3/lists/current/${encodeURIComponent(
+    list
+  )}.json?${qs.toString()}`;
 
-  const json = (await upstream.json()) as NYTApiResponse;
+  const res = await fetch(url, { next: { revalidate: REVALIDATE } });
+  if (!res.ok) {
+    return NextResponse.json({ books: [], list_name: list, updated: "" });
+  }
 
-  const books = (json?.results?.books ?? []).map((b) => ({
-    isbn13: (b.primary_isbn13 || b.isbn13 || b.isbns?.[0]?.isbn13 || "") + "",
+  const json = (await res.json().catch(() => null)) as NytResp | null;
+  const results = json?.results;
+
+  const books = (results?.books ?? []).map((b) => ({
+    isbn13: Array.isArray(b.isbns)
+      ? b.isbns.find((x) => x.isbn13)?.isbn13 ?? ""
+      : "",
     title: b.title ?? "",
     author: b.author ?? "",
-    rank: b.rank ?? null,
+    rank: Number(b.rank ?? 0),
     book_image: b.book_image ?? "",
-    description: b.description ?? "",
   }));
 
-  return NextResponse.json(
-    { list_name: json?.results?.list_name ?? "", updated: json?.results?.updated ?? "", books },
-    { headers: { "Cache-Control": "s-maxage=3600, stale-while-revalidate=60" } }
-  );
+  return NextResponse.json({
+    books,
+    list_name: results?.list_name ?? list,
+    updated: results?.published_date ?? "",
+  });
 }

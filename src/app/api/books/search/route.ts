@@ -1,20 +1,7 @@
 import { NextResponse } from "next/server";
+import type { GBSearch, GBItem } from "@/types/google-books";
 
-type GBIndustryId = { type?: string; identifier?: string };
-type GBImageLinks = { smallThumbnail?: string; thumbnail?: string };
-type GBVolumeInfo = {
-  title?: string;
-  authors?: string[];
-  imageLinks?: GBImageLinks | null;
-  infoLink?: string;
-  publisher?: string;
-  publishedDate?: string;
-  industryIdentifiers?: GBIndustryId[];
-};
-type GBItem = { id?: string; volumeInfo?: GBVolumeInfo | null };
-type GBResponse = { items?: GBItem[] };
-
-export const revalidate = 60 * 10; // 10 menit cache server
+const REVALIDATE = 60 * 10; // 10 menit cache fetch
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -28,37 +15,27 @@ export async function GET(req: Request) {
     printType: "books",
     orderBy: "relevance",
     country: "ID",
-    // minta identifier supaya dapat ISBN-13
     fields:
-      "items(id,volumeInfo(title,authors,imageLinks,infoLink,publisher,publishedDate,industryIdentifiers)),totalItems",
+      "items(id,volumeInfo(title,authors,imageLinks,infoLink,publisher,publishedDate)),totalItems",
   });
   if (key) qs.set("key", key);
 
   const url = `https://www.googleapis.com/books/v1/volumes?${qs.toString()}`;
-  const res = await fetch(url, { next: { revalidate } });
+  const res = await fetch(url, { next: { revalidate: REVALIDATE } });
   if (!res.ok) return NextResponse.json({ items: [] }, { status: 502 });
 
-  const data = (await res.json()) as GBResponse;
+  const data = (await res.json()) as GBSearch;
 
-  const items = (data.items ?? []).map((it) => {
+  const items = (data.items ?? []).map((it: GBItem) => {
     const v = it.volumeInfo ?? {};
-    const isbn13 =
-      v.industryIdentifiers?.find((x) => x?.type === "ISBN_13")?.identifier ??
-      v.industryIdentifiers?.find(
-        (x) => (x?.identifier || "").replace(/\D/g, "").length === 13
-      )?.identifier ??
-      undefined;
-
     return {
-      id: it.id ?? "",
+      id: it.id,
       title: v.title ?? "",
       authors: v.authors ?? [],
-      thumbnail:
-        v.imageLinks?.thumbnail ?? v.imageLinks?.smallThumbnail ?? null,
+      thumbnail: v.imageLinks?.thumbnail ?? v.imageLinks?.smallThumbnail ?? null,
       infoLink: v.infoLink ?? "",
       publisher: v.publisher ?? "",
       publishedDate: v.publishedDate ?? "",
-      isbn13, // dipakai kalau mau buka modal/detail cepat
     };
   });
 
