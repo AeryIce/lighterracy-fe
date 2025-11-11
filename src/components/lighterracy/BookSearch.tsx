@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Result } from "@zxing/library";
+import type { SearchItem } from "@/types/search-lite"; // jika dipisah
+
 
 declare global {
   interface Window {

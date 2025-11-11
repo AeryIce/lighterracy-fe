@@ -4,6 +4,15 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import BookModal from "./BookModal";
 
+// Tipe tipis sesuai payload yang SAAT INI kamu pakai (data.books + book_image)
+type NYTRawItem = {
+  isbn13?: string;
+  title?: string;
+  author?: string;
+  rank?: number;
+  book_image?: string;
+};
+
 type Item = {
   isbn: string;
   title: string;
@@ -40,22 +49,28 @@ export default function NYTCarousel({
         });
         if (!res.ok) throw new Error(`NYT fetch failed (${res.status})`);
 
-        const data = await res.json();
-        const mapped: Item[] = (data?.books ?? []).map((b: any) => ({
+        const data = (await res.json()) as {
+          books?: NYTRawItem[];      // <-- tetap 'books'
+          list_name?: string;
+          updated?: string;
+        };
+
+        const mapped: Item[] = (data?.books ?? []).map((b: NYTRawItem) => ({
           isbn: b?.isbn13 ?? "",
           title: b?.title ?? "",
           author: b?.author ?? "",
           rank: Number(b?.rank ?? 0),
-          cover: b?.book_image ?? "/og/og-from-upload.png",
+          cover: b?.book_image ?? "/og/og-from-upload.png", // <-- tetap 'book_image'
         }));
 
         setItems(mapped);
         setMeta({ list_name: data?.list_name, updated: data?.updated });
         setError(null);
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (controller.signal.aborted) return;
+        const msg = e instanceof Error ? e.message : "Gagal memuat data NYT";
         setItems([]);
-        setError(e?.message || "Gagal memuat data NYT");
+        setError(msg);
       }
     })();
     return () => controller.abort();
@@ -124,7 +139,7 @@ export default function NYTCarousel({
     );
   }
 
-  // kosong → sembunyikan section
+  // kosong → sembunyikan section (tetapkan perilaku lama)
   if (loop.length === 0) return null;
 
   return (
@@ -186,7 +201,7 @@ function Card({ b, onOpen }: { b: Item; onOpen: (b: Item) => void }) {
           className="object-cover"
           sizes="160px"
         />
-        <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+      <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
           NYT #{b.rank}
         </div>
       </div>
@@ -203,4 +218,3 @@ function Card({ b, onOpen }: { b: Item; onOpen: (b: Item) => void }) {
     </button>
   );
 }
-

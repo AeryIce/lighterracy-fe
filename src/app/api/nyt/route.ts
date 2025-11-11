@@ -1,41 +1,47 @@
 import { NextResponse } from "next/server";
 
-const BASE = "https://api.nytimes.com/svc/books/v3/lists/current";
-
-export const revalidate = 60 * 60 * 12; // 12 jam
+type NYTApiBook = {
+  primary_isbn13?: string;
+  isbn13?: string;
+  isbns?: Array<{ isbn13?: string }>;
+  title?: string;
+  author?: string;
+  rank?: number;
+  book_image?: string;
+  description?: string;
+};
+type NYTApiResponse = {
+  results?: {
+    list_name?: string;
+    updated?: string;
+    books?: NYTApiBook[];
+  } | null;
+};
 
 export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const list = searchParams.get("list") || "trade-fiction-paperback";
-    const key = process.env.NYT_API_KEY;
-    if (!key) {
-      return NextResponse.json({ error: "NYT_API_KEY missing" }, { status: 500 });
-    }
+  const { searchParams } = new URL(req.url);
+  const list = searchParams.get("list") || "trade-fiction-paperback";
 
-    const url = `${BASE}/${encodeURIComponent(list)}.json?api-key=${key}`;
-    const res = await fetch(url, { next: { revalidate } });
-    if (!res.ok) {
-      return NextResponse.json({ error: "NYT fetch failed" }, { status: 502 });
-    }
-    const data = await res.json();
+  const key = process.env.NYT_API_KEY;
+  if (!key) return NextResponse.json({ error: "Missing NYT_API_KEY" }, { status: 500 });
 
-    const books = (data?.results?.books ?? []).map((b: any) => ({
-      rank: b.rank,
-      title: b.title,
-      author: b.author,
-      description: b.description,
-      isbn13: (b.isbns?.[0]?.isbn13) || (b.primary_isbn13) || null,
-      book_image: b.book_image || null,
-      amazon_url: b.amazon_product_url || null
-    }));
+  const url = `https://api.nytimes.com/svc/books/v3/lists/current/${encodeURIComponent(list)}.json?api-key=${key}`;
+  const upstream = await fetch(url, { next: { revalidate: 3600 } });
+  if (!upstream.ok) return NextResponse.json({ error: "Upstream error" }, { status: 502 });
 
-    return NextResponse.json({
-      updated: data?.last_modified || data?.results?.published_date,
-      list_name: data?.results?.list_name,
-      books
-    });
-  } catch (e) {
-    return NextResponse.json({ error: "Unexpected NYT error" }, { status: 500 });
-  }
+  const json = (await upstream.json()) as NYTApiResponse;
+
+  const books = (json?.results?.books ?? []).map((b) => ({
+    isbn13: (b.primary_isbn13 || b.isbn13 || b.isbns?.[0]?.isbn13 || "") + "",
+    title: b.title ?? "",
+    author: b.author ?? "",
+    rank: b.rank ?? null,
+    book_image: b.book_image ?? "",
+    description: b.description ?? "",
+  }));
+
+  return NextResponse.json(
+    { list_name: json?.results?.list_name ?? "", updated: json?.results?.updated ?? "", books },
+    { headers: { "Cache-Control": "s-maxage=3600, stale-while-revalidate=60" } }
+  );
 }

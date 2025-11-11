@@ -1,114 +1,220 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type Book = {
   title: string;
   subtitle?: string;
-  authors: string[];
-  publisher: string;
-  publishedDate: string;
-  description: string;
-  cover: string | null;
-  pageCount: number | null;
-  dimensions: { height?: string; width?: string; thickness?: string } | null;
-  categories: string[];
-  averageRating: number | null;
-  ratingsCount: number | null;
-} | null;
+  authors?: string[];
+  publisher?: string;
+  publishedDate?: string;
+  description?: string;
+  textSnippet?: string;
+  categories?: string[];
+  isbn13?: string | null;
+  pageCount?: number | null;
+  dimensions?: { height?: string; width?: string; thickness?: string } | null;
+  averageRating?: number | null;
+  ratingsCount?: number | null;
+  imageLinks?: { smallThumbnail?: string; thumbnail?: string; medium?: string; large?: string } | null;
+  previewLink?: string;
+  infoLink?: string;
+  cover?: string | null;
+};
 
-export default function BookDetailModal({ open = true, book }: { open?: boolean; book: Book }) {
+type Props = { open?: boolean; book: Book | null };
+
+function decodeEntities(s = ""): string {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;|&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ");
+}
+function sanitizeHtml(input = ""): string {
+  if (!input) return "";
+  const decoded = decodeEntities(input);
+  let s = decoded.replace(/<(\/?)(?!b|strong|i|em|br|p|ul|ol|li|sub|sup|a)([a-z0-9-]+)(\s[^>]*)?>/gi, "");
+  s = s.replace(/<(b|strong|i|em|br|p|ul|ol|li|sub|sup)\b[^>]*>/gi, "<$1>");
+  s = s.replace(/<a\b([^>]*)>/gi, (_m, attrs) => {
+    const m = /\bhref\s*=\s*(['"]?)([^"' >]+)\1/i.exec(attrs || "");
+    const href = m ? m[2] : "";
+    if (!/^https?:\/\//i.test(href)) return "<span>";
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">`;
+  });
+  return s;
+}
+function httpsify(u?: string | null) {
+  if (!u) return u ?? null;
+  return u.startsWith("http://") ? u.replace("http://", "https://") : u;
+}
+function toCmStr(txt?: string): string | null {
+  if (!txt) return null;
+  const num = parseFloat(txt.replace(",", "."));
+  if (Number.isNaN(num)) return txt;
+  const isIn = /in(ch|ches)?|"/i.test(txt);
+  const cm = isIn ? Math.round(num * 2.54 * 10) / 10 : num;
+  return `${cm} cm`;
+}
+function joinDims(d?: { height?: string; width?: string; thickness?: string } | null): string | null {
+  if (!d) return null;
+  const parts = [toCmStr(d.height), toCmStr(d.width), toCmStr(d.thickness)].filter(Boolean) as string[];
+  return parts.length ? parts.join(" × ") : null;
+}
+
+export default function BookDetailModal({ open = true, book }: Props) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(open);
-
-  useEffect(() => setIsOpen(open), [open]);
-
-  const onClose = () => {
-    setIsOpen(false);
-    if (typeof window !== "undefined") {
-      if (window.history.length > 1) router.back();
-      else router.push("/");
+  const handleClose = useCallback(() => {
+    try {
+      router.back();
+    } catch {
+      router.push("/");
     }
-  };
+  }, [router]);
 
-  if (!book) {
-    return (
-      <Dialog open={isOpen} onOpenChange={(v) => (!v ? onClose() : null)}>
-        <DialogContent className="sm:max-w-[720px]">
-          <DialogHeader>
-            <DialogTitle>Buku tidak ditemukan</DialogTitle>
-            <DialogDescription>Coba ISBN lain atau scan ulang.</DialogDescription>
-          </DialogHeader>
-          <div className="mt-2 flex justify-end">
+  // Lock scroll + ESC
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onEsc = (e: KeyboardEvent) => e.key === "Escape" && handleClose();
+    window.addEventListener("keydown", onEsc);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onEsc);
+    };
+  }, [open, handleClose]);
+
+  const title = book?.title || "—";
+  const subtitle = book?.subtitle || "";
+  const authors = (book?.authors ?? []).join(", ");
+  const pub = [book?.publisher, book?.publishedDate].filter(Boolean).join(" · ");
+  const cover =
+    httpsify(book?.cover) ||
+    httpsify(book?.imageLinks?.large) ||
+    httpsify(book?.imageLinks?.medium) ||
+    httpsify(book?.imageLinks?.thumbnail) ||
+    httpsify(book?.imageLinks?.smallThumbnail) ||
+    "/og/og-from-upload.png";
+  const dim = joinDims(book?.dimensions);
+  const pages = book?.pageCount ?? null;
+
+  const safeSnippet = useMemo(() => (book?.textSnippet ? sanitizeHtml(book.textSnippet) : ""), [book?.textSnippet]);
+  const safeDesc = useMemo(() => (book?.description ? sanitizeHtml(book.description) : ""), [book?.description]);
+
+  // Tetap modal, biar konsisten UX
+  return (
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100]">
+      <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
+      <div className="absolute inset-3 md:inset-8 bg-white rounded-2xl shadow-soft p-4 md:p-6 overflow-auto">
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-lg md:text-xl font-semibold leading-tight">
+              {title}
+              {subtitle ? <span className="block text-sm font-normal text-muted-foreground mt-0.5">{subtitle}</span> : null}
+            </h1>
             <button
-              onClick={onClose}
-              className="px-3 py-2 rounded-lg bg-black text-white text-sm"
+              onClick={handleClose}
+              aria-label="Tutup"
+              className="rounded-full px-2 text-xl leading-none hover:bg-black/5"
             >
-              Tutup
+              ×
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
-  const dims = book.dimensions
-    ? [book.dimensions.height, book.dimensions.width, book.dimensions.thickness].filter(Boolean).join(" × ")
-    : null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(v) => (!v ? onClose() : null)}>
-      <DialogContent className="sm:max-w-[900px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl">{book.title}</DialogTitle>
-          {book.subtitle ? <DialogDescription className="text-sm">{book.subtitle}</DialogDescription> : null}
-        </DialogHeader>
-
-        <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-4">
-          {/* Cover 2:3, tidak memanjang */}
-          <div className="w-[180px]">
-            <div className="w-full rounded-xl overflow-hidden shadow" style={{ aspectRatio: "2 / 3" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={book.cover || "/og/og-from-upload.png"}
-                alt={book.title || "Book cover"}
-                className="w-full h-full object-cover"
-                loading="eager"
-                decoding="async"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="text-sm opacity-80">{book.authors.join(", ")}</div>
-            <div className="text-xs opacity-60 mt-1">
-              {[book.publisher, book.publishedDate].filter(Boolean).join(" · ")}
+          {/* Grid content compact */}
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-[200px,1fr] gap-4 md:gap-6">
+            {/* Cover */}
+            <div className="relative w-[200px] h-[280px] md:w-[220px] md:h-[320px] rounded-xl overflow-hidden bg-neutral-100 justify-self-center md:justify-self-start">
+              <Image src={cover || "/og/og-from-upload.png"} alt={title} fill className="object-cover" sizes="220px" />
             </div>
 
-            <div className="mt-2 space-y-1 text-xs opacity-80">
-              {typeof book.averageRating === "number" && (
-                <div>Rating: {book.averageRating} {!!book.ratingsCount && `( ${book.ratingsCount} )`}</div>
+            {/* Right side */}
+            <div className="text-sm leading-relaxed">
+              {authors && (
+                <div className="text-[13px] text-muted-foreground">
+                  <span className="opacity-70">Penulis:</span> <b>{authors}</b>
+                </div>
               )}
-              {book.pageCount && <div>Halaman: {book.pageCount}</div>}
-              {dims && <div>Dimensi: {dims}</div>}
-              {book.categories.length > 0 && <div>Kategori: {book.categories.join(" · ")}</div>}
-            </div>
+              {pub && (
+                <div className="text-[13px] text-muted-foreground mt-1">
+                  <span className="opacity-70">Publikasi: </span>
+                  {pub}
+                </div>
+              )}
 
-            {book.description && <p className="mt-3 text-sm leading-relaxed">{book.description}</p>}
+              {!!(book?.categories?.length ?? 0) && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {book!.categories!.map((c, i) => (
+                    <span
+                      key={i}
+                      className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-            <div className="mt-4">
-              <button
-                onClick={onClose}
-                className="px-3 py-2 rounded-lg bg-gray-200 text-sm"
-              >
-                Tutup
-              </button>
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1 text-[13px] text-muted-foreground">
+                {book?.isbn13 && (
+                  <div>
+                    <span className="opacity-70">ISBN-13:</span> {book.isbn13}
+                  </div>
+                )}
+                {pages && (
+                  <div>
+                    <span className="opacity-70">Halaman:</span> {pages}
+                  </div>
+                )}
+                {dim && (
+                  <div>
+                    <span className="opacity-70">Dimensi:</span> {dim}
+                  </div>
+                )}
+              </div>
+
+              {safeSnippet && (
+                <p className="mt-3 italic text-[13px] text-muted-foreground" dangerouslySetInnerHTML={{ __html: safeSnippet }} />
+              )}
+
+              <div className="mt-3 text-[14px]">
+                {safeDesc ? (
+                  <div
+                    className="leading-relaxed break-words [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                    dangerouslySetInnerHTML={{ __html: safeDesc }}
+                  />
+                ) : (
+                  <p className="opacity-70">(Tidak ada deskripsi dari Google Books.)</p>
+                )}
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                {book?.infoLink ? (
+                  <a
+                    href={book.infoLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 rounded-lg bg-black text-white text-sm"
+                  >
+                    Buka di Google Books
+                  </a>
+                ) : null}
+                <button onClick={handleClose} className="px-3 py-2 rounded-lg bg-neutral-200 text-sm">
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

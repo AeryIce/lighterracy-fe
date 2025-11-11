@@ -1,158 +1,110 @@
 import { NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
+// --- types ---------------------------------------------------------------
 
-// ---------------- helpers ----------------
-function cleanIsbn(raw: string) {
-  return (raw || "").toUpperCase().replace(/[^0-9X]/g, "");
-}
-function httpsify(url?: string | null) {
-  if (!url) return null;
-  return url.startsWith("http://") ? url.replace("http://", "https://") : url;
-}
+type VolumeInfoFull = {
+  title?: string;
+  subtitle?: string;
+  authors?: string[];
+  publisher?: string;
+  publishedDate?: string;
+  description?: string;
+  industryIdentifiers?: { type?: string; identifier?: string }[];
+  pageCount?: number;
+  printedPageCount?: number;
+  dimensions?: { height?: string; width?: string; thickness?: string };
+  categories?: string[];
+  averageRating?: number;
+  ratingsCount?: number;
+  imageLinks?: {
+    smallThumbnail?: string;
+    thumbnail?: string;
+    medium?: string;
+    large?: string;
+  } | null;
+  previewLink?: string;
+  infoLink?: string;
+};
 
-async function gbSearch(isbn: string, key?: string | null) {
-  const base = "https://www.googleapis.com/books/v1/volumes";
+type SearchItem = {
+  id: string;
+  selfLink: string;
+  volumeInfo?: Partial<VolumeInfoFull>;
+  searchInfo?: { textSnippet?: string };
+};
+type SearchResp = { totalItems?: number; items?: SearchItem[] };
 
-  // attempt 1: dengan key + fields (hemat)
-  {
-    const qs = new URLSearchParams({
-      q: `isbn:${isbn}`,
-      maxResults: "1",
-      projection: "lite",
-      fields:
-        "totalItems,items(id,selfLink,volumeInfo/title,volumeInfo/subtitle,volumeInfo/authors,volumeInfo/publisher,volumeInfo/publishedDate,volumeInfo/description,volumeInfo/pageCount,volumeInfo/categories,volumeInfo/imageLinks,volumeInfo/language,volumeInfo/previewLink,volumeInfo/infoLink,volumeInfo/industryIdentifiers)",
-    });
-    if (key) qs.set("key", key);
+type VolumeResp = { volumeInfo?: VolumeInfoFull };
 
-    const res = await fetch(`${base}?${qs.toString()}`, { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.items?.[0]) return data.items[0];
-    }
-  }
+// --- handler -------------------------------------------------------------
 
-  // attempt 2: dengan key, TANPA fields (lebih longgar)
-  {
-    const qs = new URLSearchParams({ q: `isbn:${isbn}`, maxResults: "1" });
-    if (key) qs.set("key", key);
-
-    const res = await fetch(`${base}?${qs.toString()}`, { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.items?.[0]) return data.items[0];
-    }
-  }
-
-  // attempt 3: tanpa key (kadang hasil beda)
-  {
-    const qs = new URLSearchParams({ q: `isbn:${isbn}`, maxResults: "1" });
-    const res = await fetch(`${base}?${qs.toString()}`, { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.items?.[0]) return data.items[0];
-    }
-  }
-
-  return null;
-}
-
-async function gbDetailById(id: string, key?: string | null) {
-  const base = "https://www.googleapis.com/books/v1/volumes";
-  const qs = new URLSearchParams({
-    fields:
-      "id,volumeInfo(title,subtitle,authors,publisher,publishedDate,description,pageCount,printedPageCount,dimensions,categories,averageRating,ratingsCount,imageLinks,language,previewLink,infoLink,canonicalVolumeLink),saleInfo(country,saleability,isEbook,retailPrice),accessInfo(webReaderLink)",
-  });
-  if (key) qs.set("key", key);
-
-  const res = await fetch(`${base}/${encodeURIComponent(id)}?${qs.toString()}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  return res.json();
-}
-// -----------------------------------------
-
-// ⬇⬇⬇  PERHATIKAN: params sekarang Promise — WAJIB di-await
 export async function GET(
   _req: Request,
   ctx: { params: Promise<{ code: string }> }
 ) {
-  try {
-    const { code } = await ctx.params;            // <--- FIX: await
-    const isbn = cleanIsbn(code);
+  const { code } = await ctx.params;
+  const isbn = (code || "").trim();
+  if (!isbn) return NextResponse.json({ found: false }, { status: 400 });
 
-    if (!/^(\d{13}|\d{9}[\dX])$/.test(isbn)) {
-      return NextResponse.json(
-        { found: false, reason: "Invalid ISBN" },
-        { status: 400 }
-      );
-    }
+  const key = process.env.GOOGLE_BOOKS_API_KEY ?? "";
 
-    const key = process.env.GOOGLE_BOOKS_API_KEY || null;
+  // Step 1 — cari volume + selfLink (+ snippet)
+  const qs1 = new URLSearchParams({
+    q: `isbn:${isbn}`,
+    maxResults: "1",
+    printType: "books",
+    country: "ID",
+    fields:
+      "items(id,selfLink,volumeInfo(title,subtitle,authors,publisher,publishedDate,imageLinks,previewLink,infoLink),searchInfo(textSnippet)),totalItems",
+  });
+  if (key) qs1.set("key", key);
 
-    // 1) search by ISBN (multi-fallback)
-    const item = await gbSearch(isbn, key);
-    if (!item) {
-      return NextResponse.json({ found: false }, { status: 404 });
-    }
+  const url1 = `https://www.googleapis.com/books/v1/volumes?${qs1.toString()}`;
+  const r1 = await fetch(url1, { next: { revalidate: 600 } });
+  if (!r1.ok) return NextResponse.json({ found: false }, { status: 502 });
 
-    // 2) detail by id (lebih lengkap); kalau gagal, pakai data dari search
-    const detail = item.id ? await gbDetailById(item.id, key) : null;
-    const vi = (detail?.volumeInfo ?? item.volumeInfo) || {};
-    const sale = detail?.saleInfo || {};
-    const access = detail?.accessInfo || {};
+  const s: SearchResp = await r1.json();
+  const first = s.items?.[0];
+  if (!first) return NextResponse.json({ found: false }, { status: 404 });
 
-    const cover =
-      httpsify(vi.imageLinks?.thumbnail) ||
-      httpsify(vi.imageLinks?.smallThumbnail) ||
-      null;
+  // Step 2 — fetch selfLink untuk field lengkap (fallback ke step 1 jika perlu)
+  const qs2 = new URLSearchParams();
+  if (key) qs2.set("key", key);
+  const url2 = `${first.selfLink}${qs2.size ? `?${qs2.toString()}` : ""}`;
+  const r2 = await fetch(url2, { next: { revalidate: 600 } });
+  const v: VolumeResp = r2.ok ? await r2.json() : { volumeInfo: first.volumeInfo as VolumeInfoFull };
 
-    const book = {
-      // identifiers
-      id: detail?.id ?? item.id ?? null,
-      isbn,
+  // Merge: data lengkap (step 2) override data tipis (step 1)
+  const vi: VolumeInfoFull = {
+    ...(first.volumeInfo ?? {}),
+    ...(v.volumeInfo ?? {}),
+  };
 
-      // core
+  // ISBN-13 (fallback ke apa pun yang tersedia)
+  const isbn13 =
+    vi.industryIdentifiers?.find((x) => x.type === "ISBN_13")?.identifier ??
+    vi.industryIdentifiers?.[0]?.identifier ??
+    null;
+
+  return NextResponse.json({
+    found: true as const,
+    book: {
       title: vi.title || "",
       subtitle: vi.subtitle || "",
-      authors: vi.authors || [],
+      authors: vi.authors ?? [],
       publisher: vi.publisher || "",
       publishedDate: vi.publishedDate || "",
       description: vi.description || "",
-
-      // pages & dims
-      pageCount: vi.pageCount ?? null,
-      printedPageCount: vi.printedPageCount ?? null,
+      textSnippet: first.searchInfo?.textSnippet ?? "",
+      categories: vi.categories ?? [],
+      isbn13,
+      pageCount: vi.printedPageCount ?? vi.pageCount ?? null,
       dimensions: vi.dimensions ?? null,
-
-      // categories & ratings
-      categories: vi.categories || [],
       averageRating: vi.averageRating ?? null,
       ratingsCount: vi.ratingsCount ?? null,
-
-      // links
-      imageLinks: vi.imageLinks || null,
-      cover,
-      language: vi.language || "",
-      previewLink: vi.previewLink || access.webReaderLink || "",
+      imageLinks: vi.imageLinks ?? null,
+      previewLink: vi.previewLink || "",
       infoLink: vi.infoLink || "",
-      canonicalVolumeLink: vi.canonicalVolumeLink || "",
-
-      // sale/access
-      saleInfo: {
-        country: sale.country ?? null,
-        saleability: sale.saleability ?? null,
-        isEbook: sale.isEbook ?? null,
-        retailPrice: sale.retailPrice ?? null,
-      },
-      accessInfo: {
-        webReaderLink: access.webReaderLink ?? "",
-      },
-    };
-
-    return NextResponse.json({ found: true, book });
-  } catch {
-    return NextResponse.json({ found: false, code: "UNEXPECTED" }, { status: 500 });
-  }
+    },
+  });
 }

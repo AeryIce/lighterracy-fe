@@ -6,14 +6,34 @@ type ParamsPromise = Promise<{ code: string }>;
 
 export const dynamic = "force-dynamic";
 
-// helpers
+// ====== Types untuk response /api/isbn/[code] ======
+type IsbnApiBook = {
+  title: string;
+  subtitle?: string;
+  authors?: string[];
+  publisher?: string;
+  publishedDate?: string;
+  description?: string; // RAW dari API (bisa HTML + entities)
+  textSnippet?: string;
+  isbn13?: string | null;
+  cover?: string | null;
+  imageLinks?: { thumbnail?: string; smallThumbnail?: string } | null;
+  pageCount?: number | null;
+  printedPageCount?: number | null;
+  dimensions?: { height?: string; width?: string; thickness?: string } | null;
+  dimensionsCm?: { heightCm?: number; widthCm?: number; thicknessCm?: number } | null;
+  categories?: string[];
+  averageRating?: number | null;
+  ratingsCount?: number | null;
+};
+
+type IsbnApiSuccess = { found: true; book: IsbnApiBook };
+type IsbnApiNotFound = { found: false };
+type IsbnApiResponse = IsbnApiSuccess | IsbnApiNotFound;
+
 function httpsify(url?: string | null) {
   if (!url) return null;
   return url.startsWith("http://") ? url.replace("http://", "https://") : url;
-}
-function stripHtml(html?: string) {
-  if (!html) return "";
-  return html.replace(/<[^>]+>/g, "").trim();
 }
 
 export async function generateMetadata({ params }: { params: ParamsPromise }): Promise<Metadata> {
@@ -31,34 +51,18 @@ export default async function IsbnPage({ params }: { params: ParamsPromise }) {
 
   const res = await fetch(`${base}/api/isbn/${encodeURIComponent(code)}`, { cache: "no-store" });
 
-  let data: any = null;
+  let data: IsbnApiResponse | null = null;
   try {
-    data = await res.json();
+    data = (await res.json()) as IsbnApiResponse;
   } catch {
     data = null;
   }
 
-  if (!res.ok || !data?.found) {
-    // tetap tampilkan modal "not found" agar UX konsisten
+  if (!res.ok || !data || data.found !== true) {
     return <BookDetailModal open book={null} />;
   }
 
-  const b = data.book as {
-    title: string;
-    subtitle?: string;
-    authors?: string[];
-    publisher?: string;
-    publishedDate?: string;
-    description?: string;
-    cover?: string | null;
-    imageLinks?: { thumbnail?: string; smallThumbnail?: string } | null;
-    pageCount?: number | null;
-    printedPageCount?: number | null;
-    dimensions?: { height?: string; width?: string; thickness?: string } | null;
-    categories?: string[];
-    averageRating?: number | null;
-    ratingsCount?: number | null;
-  };
+  const b = data.book;
 
   const book = {
     title: b.title || "—",
@@ -66,7 +70,10 @@ export default async function IsbnPage({ params }: { params: ParamsPromise }) {
     authors: b.authors || [],
     publisher: b.publisher || "",
     publishedDate: b.publishedDate || "",
-    description: stripHtml(b.description) || "",
+    // kirim RAW agar bisa dirender HTML aman di modal
+    descriptionHtml: b.description || "",
+    textSnippet: b.textSnippet || "",
+    isbn13: b.isbn13 ?? null,
     cover:
       httpsify(b.cover) ||
       httpsify(b.imageLinks?.thumbnail) ||
@@ -74,6 +81,7 @@ export default async function IsbnPage({ params }: { params: ParamsPromise }) {
       "/og/og-from-upload.png",
     pageCount: b.printedPageCount ?? b.pageCount ?? null,
     dimensions: b.dimensions ?? null,
+    dimensionsCm: b.dimensionsCm ?? null,
     categories: b.categories || [],
     averageRating: b.averageRating ?? null,
     ratingsCount: b.ratingsCount ?? null,
