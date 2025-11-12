@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "m.media-amazon.com" },
       { protocol: "https", hostname: "books.google.com" },
       { protocol: "https", hostname: "m.media-amazon.com" }, 
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/dmwstlk3b/**", // biar hanya bucket kamu
+      },
     ],
   },
 };
