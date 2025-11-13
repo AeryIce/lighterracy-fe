@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import Link from "next/link";
 import BookDetailModal from "@/components/lighterracy/BookDetailModal";
 
 type ParamsPromise = Promise<{ code: string }>;
@@ -19,8 +18,8 @@ type IsbnApiBook = {
   cover?: string | null; // fallback lama
   imageLinks?:
     | {
-        thumbnail?: string;
         smallThumbnail?: string;
+        thumbnail?: string;
         medium?: string;
         large?: string;
       }
@@ -36,6 +35,8 @@ type IsbnApiBook = {
   categories?: string[];
   averageRating?: number | null;
   ratingsCount?: number | null;
+  previewLink?: string;
+  infoLink?: string;
 };
 
 type IsbnApiSuccess = { found: true; book: IsbnApiBook };
@@ -63,7 +64,7 @@ export default async function IsbnPage({
 }) {
   const { code } = await params;
 
-  // 🔗 Bangun origin yang sama persis dengan request user
+  // Bangun base URL yang sama dengan request user
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const proto =
@@ -79,51 +80,25 @@ export default async function IsbnPage({
     );
 
     try {
-      // Jangan lihat status, lihat isi JSON-nya
       data = (await res.json()) as IsbnApiResponse;
     } catch {
+      data = null;
+    }
+
+    // Kalau statusnya bukan 2xx, anggap gagal
+    if (!res.ok) {
       data = null;
     }
   } catch {
     data = null;
   }
 
-  // ❌ CASE: gagal / tidak ditemukan → fallback (UI sama kayak sebelumnya)
-  if (!data || data.found !== true || !data.book) {
-    return (
-      <main className="min-h-[80vh] flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center space-y-3">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">
-            Detail ISBN
-          </p>
-          <h1 className="text-lg font-semibold">
-            Buku belum bisa ditampilkan
-          </h1>
-          <p className="text-sm text-slate-600">
-            Kami belum bisa memuat detail untuk ISBN{" "}
-            <span className="font-mono tracking-wide">{code}</span>. Bisa jadi
-            Google Books sedang sulit diakses atau buku ini belum terdaftar.
-          </p>
-          <div className="pt-2 flex justify-center gap-2">
-            <Link
-              href="/"
-              className="inline-flex items-center rounded-full px-4 py-2 text-sm bg-black text-white"
-            >
-              Kembali ke beranda
-            </Link>
-            <Link
-              href="/#search"
-              className="inline-flex items-center rounded-full px-4 py-2 text-sm border border-slate-300 text-slate-700 bg-white"
-            >
-              Cari ISBN lain
-            </Link>
-          </div>
-        </div>
-      </main>
-    );
+  // ❌ Kalau gagal / not found → kirim book=null ke BookDetailModal (UI fallback lama)
+  if (!data || data.found !== true) {
+    return <BookDetailModal open book={null} />;
   }
 
-  // ✅ CASE: sukses → kirim ke BookDetailModal (UI/UX sama persis)
+  // ✅ Berhasil → mapping ke shape yang dipakai modal
   const b = data.book;
 
   const book = {
@@ -132,14 +107,14 @@ export default async function IsbnPage({
     authors: b.authors ?? [],
     publisher: b.publisher || "",
     publishedDate: b.publishedDate || "",
-    description: b.description || "", // kirim description langsung
+    description: b.description || "",
     textSnippet: b.textSnippet || "",
     isbn13: b.isbn13 ?? null,
     imageLinks: {
       large: httpsify(b.imageLinks?.large),
       medium: httpsify(b.imageLinks?.medium),
       thumbnail:
-        httpsify(b.imageLinks?.thumbnail) ?? httpsify(b.cover), // fallback ke cover lama
+        httpsify(b.imageLinks?.thumbnail) ?? httpsify(b.cover),
       smallThumbnail: httpsify(b.imageLinks?.smallThumbnail),
     },
     pageCount: b.printedPageCount ?? b.pageCount ?? null,
@@ -148,8 +123,10 @@ export default async function IsbnPage({
     categories: b.categories ?? [],
     averageRating: b.averageRating ?? null,
     ratingsCount: b.ratingsCount ?? null,
+    previewLink: b.previewLink ?? "",
+    infoLink: b.infoLink ?? "",
   };
 
-  // onOpenChange sengaja tidak dikirim (server component).
+  // onOpenChange sengaja tidak dikirim (server component)
   return <BookDetailModal open book={book} />;
 }
