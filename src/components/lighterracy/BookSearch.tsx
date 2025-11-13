@@ -49,13 +49,7 @@ export default function BookSearch() {
   const [torchOn, setTorchOn] = useState(false);
   const [zoomAvailable, setZoomAvailable] = useState(false);
   const [zoom, setZoom] = useState<number>(1);
-  // <- pakai state untuk dipakai di render (hindari akses ref di JSX)
-  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number }>({
-    min: 1,
-    max: 1,
-    step: 0.1,
-  });
-  // ref tetap disimpan jika dibutuhkan non-render usage
+  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number }>({ min: 1, max: 1, step: 0.1 });
   const zoomRangeRef = useRef<{ min: number; max: number; step: number }>({ min: 1, max: 1, step: 0.1 });
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -127,10 +121,18 @@ export default function BookSearch() {
         } as MediaTrackConstraints,
         audio: false,
       });
-      if (videoRef.current) {
-        videoRef.current.srcObject = streamRef.current;
-        await videoRef.current.play();
-      }
+
+      const v = videoRef.current!;
+      // ⚠️ KUNCI: set properti & atribut sebelum play()
+      v.muted = true;
+      v.autoplay = true;
+      v.playsInline = true as boolean;
+      v.setAttribute("muted", "");
+      v.setAttribute("autoplay", "");
+      v.setAttribute("playsinline", "");
+
+      v.srcObject = streamRef.current;
+      try { await v.play(); } catch { /* ignore */ }
     } catch (e) {
       setError(errMsg(e));
       return;
@@ -202,26 +204,18 @@ export default function BookSearch() {
                 return;
               }
             }
-          } catch {
-            // continue
-          }
+          } catch { /* continue */ }
           rafRef.current = requestAnimationFrame(loop);
         };
         rafRef.current = requestAnimationFrame(loop);
         return; // selesai path A
-      } catch {
-        // fallback ke ZXing
-      }
+      } catch { /* fallback ke ZXing */ }
     }
 
     // B) ZXing fallback
     try {
       const hints = new Map<ZX.DecodeHintType, unknown>();
-      hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [
-        ZX.BarcodeFormat.EAN_13,
-        ZX.BarcodeFormat.EAN_8,
-        ZX.BarcodeFormat.CODE_128,
-      ]);
+      hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [ZX.BarcodeFormat.EAN_13, ZX.BarcodeFormat.EAN_8, ZX.BarcodeFormat.CODE_128]);
       const reader = new BrowserMultiFormatReader(hints);
 
       if (streamRef.current) {
@@ -248,11 +242,7 @@ export default function BookSearch() {
   }
 
   function lockResult(isbn: string) {
-    try {
-      navigator.vibrate?.(40);
-    } catch {
-      /* noop */
-    }
+    try { navigator.vibrate?.(40); } catch {}
     setDetected(isbn);
     stopScan();
   }
@@ -260,21 +250,11 @@ export default function BookSearch() {
   function stopScan() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
-    if (stopZxingRef.current) {
-      try {
-        stopZxingRef.current();
-      } catch {
-        /* noop */
-      }
-      stopZxingRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
+    if (stopZxingRef.current) { try { stopZxingRef.current(); } catch {} ; stopZxingRef.current = null; }
+    if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
     const v = videoRef.current as (HTMLVideoElement & { srcObject?: MediaStream | null }) | null;
     if (v) {
-      v.pause();
+      try { v.pause(); } catch {}
       v.srcObject = null;
       v.removeAttribute("src");
     }
@@ -283,18 +263,12 @@ export default function BookSearch() {
   }
 
   useEffect(() => () => stopScan(), []);
-  useEffect(() => {
-    if (mode === "type" && scanning) stopScan();
-  }, [mode, scanning]);
+  useEffect(() => { if (mode === "type" && scanning) stopScan(); }, [mode, scanning]);
 
   async function decodeImageData(imageData: ImageData): Promise<string | null> {
     const reader = new ZX.MultiFormatReader();
     const hints = new Map<ZX.DecodeHintType, unknown>();
-    hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [
-      ZX.BarcodeFormat.EAN_13,
-      ZX.BarcodeFormat.EAN_8,
-      ZX.BarcodeFormat.CODE_128,
-    ]);
+    hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [ZX.BarcodeFormat.EAN_13, ZX.BarcodeFormat.EAN_8, ZX.BarcodeFormat.CODE_128]);
     hints.set(ZX.DecodeHintType.TRY_HARDER, true);
     reader.setHints(hints);
 
@@ -306,12 +280,7 @@ export default function BookSearch() {
       return res.getText?.() as string;
     };
 
-    try {
-      const txt = tryDecode();
-      if (txt) return txt;
-    } catch {
-      /* try next */
-    }
+    try { const txt = tryDecode(); if (txt) return txt; } catch {}
 
     const boosted = boostContrast(imageData, 0.35, 10);
     try {
@@ -320,9 +289,7 @@ export default function BookSearch() {
       const bitmap = new ZX.BinaryBitmap(binary);
       const res = reader.decode(bitmap);
       if (res?.getText()) return res.getText();
-    } catch {
-      /* try next */
-    }
+    } catch {}
 
     try {
       const rotated = rotateImageData(boosted, 90);
@@ -331,9 +298,7 @@ export default function BookSearch() {
       const bitmap = new ZX.BinaryBitmap(binary);
       const res = reader.decode(bitmap);
       if (res?.getText()) return res.getText();
-    } catch {
-      /* give up */
-    }
+    } catch {}
 
     return null;
   }
@@ -354,17 +319,14 @@ export default function BookSearch() {
     const rad = (deg * Math.PI) / 180;
     const sin = Math.abs(Math.sin(rad));
     const cos = Math.abs(Math.cos(rad));
-    const w = src.width,
-      h = src.height;
+    const w = src.width, h = src.height;
     const newW = Math.floor(w * cos + h * sin);
     const newH = Math.floor(w * sin + h * cos);
     const cvs = document.createElement("canvas");
-    cvs.width = newW;
-    cvs.height = newH;
+    cvs.width = newW; cvs.height = newH;
     const ctx = cvs.getContext("2d")!;
     const tmp = document.createElement("canvas");
-    tmp.width = w;
-    tmp.height = h;
+    tmp.width = w; tmp.height = h;
     const tctx = tmp.getContext("2d")!;
     tctx.putImageData(src, 0, 0);
     ctx.translate(newW / 2, newH / 2);
@@ -372,9 +334,7 @@ export default function BookSearch() {
     ctx.drawImage(tmp, -w / 2, -h / 2);
     return ctx.getImageData(0, 0, newW, newH);
   }
-  function clamp(v: number) {
-    return Math.max(0, Math.min(255, v | 0));
-  }
+  function clamp(v: number) { return Math.max(0, Math.min(255, v | 0)); }
 
   async function captureAndDecode() {
     setError(null);
@@ -384,8 +344,7 @@ export default function BookSearch() {
     const w = Math.max(600, Math.floor(v.videoWidth * (scale || 1)));
     const h = Math.max(400, Math.floor(v.videoHeight * (scale || 1)));
     const cvs = document.createElement("canvas");
-    cvs.width = w;
-    cvs.height = h;
+    cvs.width = w; cvs.height = h;
     const ctx = cvs.getContext("2d")!;
     ctx.drawImage(v, 0, 0, w, h);
     const id = ctx.getImageData(0, 0, w, h);
@@ -393,10 +352,7 @@ export default function BookSearch() {
     const text = await decodeImageData(id);
     if (text) {
       const digits = text.replace(/\D/g, "");
-      if (isIsbnCandidate(digits)) {
-        lockResult(digits);
-        return;
-      }
+      if (isIsbnCandidate(digits)) { lockResult(digits); return; }
     }
     setError("Gagal membaca dari foto. Coba dekatkan / nyalakan flash / ubah sudut.");
   }
@@ -415,8 +371,7 @@ export default function BookSearch() {
     const w = Math.floor(img.width * ratio);
     const h = Math.floor(img.height * ratio);
     const cvs = document.createElement("canvas");
-    cvs.width = w;
-    cvs.height = h;
+    cvs.width = w; cvs.height = h;
     const ctx = cvs.getContext("2d")!;
     ctx.drawImage(img, 0, 0, w, h);
     const id = ctx.getImageData(0, 0, w, h);
@@ -425,10 +380,7 @@ export default function BookSearch() {
     const text = await decodeImageData(id);
     if (text) {
       const digits = text.replace(/\D/g, "");
-      if (isIsbnCandidate(digits)) {
-        lockResult(digits);
-        return;
-      }
+      if (isIsbnCandidate(digits)) { lockResult(digits); return; }
     }
     setError("Gagal membaca gambar terpilih. Coba gambar lain / cropping barcode.");
   }
@@ -436,39 +388,15 @@ export default function BookSearch() {
   return (
     <div className="w-full max-w-xl rounded-2xl bg-white/80 p-4 shadow">
       <style jsx global>{`
-        @keyframes scanlineY {
-          0% {
-            top: 12%;
-          }
-          100% {
-            top: 78%;
-          }
-        }
-        .scanline {
-          animation: scanlineY 2.2s ease-in-out infinite alternate;
-          will-change: top;
-        }
+        @keyframes scanlineY { 0% { top: 12% } 100% { top: 78% } }
+        .scanline { animation: scanlineY 2.2s ease-in-out infinite alternate; will-change: top; }
       `}</style>
 
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-semibold">Cari Buku</h2>
         <div className="flex rounded-full bg-gray-100 p-1">
-          <button
-            type="button"
-            onClick={() => setMode("type")}
-            aria-pressed={mode === "type"}
-            className={`px-3 py-1 text-sm rounded-full ${mode === "type" ? "bg-white shadow" : "opacity-70"}`}
-          >
-            Ketik
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("scan")}
-            aria-pressed={mode === "scan"}
-            className={`px-3 py-1 text-sm rounded-full ${mode === "scan" ? "bg-white shadow" : "opacity-70"}`}
-          >
-            Scan
-          </button>
+          <button type="button" onClick={() => setMode("type")} aria-pressed={mode === "type"} className={`px-3 py-1 text-sm rounded-full ${mode === "type" ? "bg-white shadow" : "opacity-70"}`}>Ketik</button>
+          <button type="button" onClick={() => setMode("scan")} aria-pressed={mode === "scan"} className={`px-3 py-1 text-sm rounded-full ${mode === "scan" ? "bg-white shadow" : "opacity-70"}`}>Scan</button>
         </div>
       </div>
 
@@ -485,17 +413,11 @@ export default function BookSearch() {
               autoComplete="off"
               aria-label="Input ISBN"
             />
-            <button onClick={submitTyped} className="px-4 py-2 rounded-lg bg-black text-white">
-              Cari
-            </button>
+            <button onClick={submitTyped} className="px-4 py-2 rounded-lg bg-black text-white">Cari</button>
           </div>
           <div className="mt-3">
             <label className="text-xs opacity-60 mr-2">Atau unggah foto barcode:</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files?.[0] && decodeFromFile(e.target.files[0])}
-            />
+            <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && decodeFromFile(e.target.files[0])} />
           </div>
         </>
       )}
@@ -507,23 +429,12 @@ export default function BookSearch() {
               <div className="flex items-center gap-2">
                 <p className="text-sm opacity-70">Aktifkan kamera untuk memindai barcode ISBN.</p>
                 {cams.length > 1 && (
-                  <select
-                    value={deviceId}
-                    onChange={(e) => setDeviceId(e.target.value)}
-                    className="text-xs border rounded px-2 py-1"
-                    title="Pilih kamera"
-                  >
-                    {cams.map((c) => (
-                      <option key={c.deviceId} value={c.deviceId}>
-                        {c.label || "Camera"}
-                      </option>
-                    ))}
+                  <select value={deviceId} onChange={(e) => setDeviceId(e.target.value)} className="text-xs border rounded px-2 py-1" title="Pilih kamera">
+                    {cams.map((c) => (<option key={c.deviceId} value={c.deviceId}>{c.label || "Camera"}</option>))}
                   </select>
                 )}
               </div>
-              <button onClick={startScan} className="px-3 py-2 rounded-lg bg-black text-white text-sm">
-                Mulai Scan
-              </button>
+              <button onClick={startScan} className="px-3 py-2 rounded-lg bg-black text-white text-sm">Mulai Scan</button>
             </div>
           ) : (
             <div className="space-y-2">
@@ -531,57 +442,31 @@ export default function BookSearch() {
                 <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
                 <div className="pointer-events-none absolute inset-0 grid place-items-center">
                   <div className="w-[70%] max-w-[520px] aspect-[3/1] rounded-xl border-2 border-white/80 relative">
-                    <div
-                      className="absolute left-2 right-2 h-[3px] rounded scanline"
-                      style={{
-                        background: "linear-gradient(90deg, transparent, rgba(255,200,0,.9), transparent)",
-                        boxShadow: "0 0 12px rgba(255,200,0,.55)",
-                      }}
-                    />
+                    <div className="absolute left-2 right-2 h-[3px] rounded scanline" style={{ background: "linear-gradient(90deg, transparent, rgba(255,200,0,.9), transparent)", boxShadow: "0 0 12px rgba(255,200,0,.55)" }} />
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  {torchAvailable && (
-                    <button onClick={() => applyTorch(!torchOn)} className="px-3 py-2 rounded-lg bg-gray-200 text-sm">
-                      {torchOn ? "Matikan Flash" : "Nyalakan Flash"}
-                    </button>
-                  )}
+                  {torchAvailable && (<button onClick={() => applyTorch(!torchOn)} className="px-3 py-2 rounded-lg bg-gray-200 text-sm">{torchOn ? "Matikan Flash" : "Nyalakan Flash"}</button>)}
                   {zoomAvailable && (
                     <div className="flex items-center gap-2">
                       <span className="text-xs opacity-60">Zoom</span>
-                      <input
-                        type="range"
-                        min={zoomRange.min}
-                        max={zoomRange.max}
-                        step={zoomRange.step}
-                        value={zoom}
-                        onChange={(e) => applyZoom(parseFloat(e.target.value))}
-                      />
+                      <input type="range" min={zoomRange.min} max={zoomRange.max} step={zoomRange.step} value={zoom} onChange={(e) => applyZoom(parseFloat(e.target.value))} />
                     </div>
                   )}
                 </div>
 
                 <div className="flex gap-2">
-                  <button
-                    onClick={captureAndDecode}
-                    className="px-3 py-2 rounded-lg bg-amber-400 text-black text-sm"
-                  >
-                    Ambil Foto
-                  </button>
-                  <button onClick={stopScan} className="px-3 py-2 rounded-lg bg-gray-200 text-sm">
-                    Stop
-                  </button>
+                  <button onClick={captureAndDecode} className="px-3 py-2 rounded-lg bg-amber-400 text-black text-sm">Ambil Foto</button>
+                  <button onClick={stopScan} className="px-3 py-2 rounded-lg bg-gray-200 text-sm">Stop</button>
                 </div>
               </div>
             </div>
           )}
 
-          <p className="mt-1 text-xs opacity-60">
-            Jika kamera tidak tersedia/ditolak, gunakan mode <b>Ketik</b> atau unggah foto barcode.
-          </p>
+          <p className="mt-1 text-xs opacity-60">Jika kamera tidak tersedia/ditolak, gunakan mode <b>Ketik</b> atau unggah foto barcode.</p>
         </div>
       )}
 
@@ -590,22 +475,8 @@ export default function BookSearch() {
           <div className="text-sm">ISBN terdeteksi:</div>
           <div className="text-lg font-semibold tracking-wider">{detected}</div>
           <div className="mt-2 flex gap-2">
-            <button
-              onClick={() => router.push(`/isbn/${detected}`)}
-              className="px-3 py-2 rounded-lg bg-black text-white text-sm"
-            >
-              Buka detail
-            </button>
-            <button
-              onClick={() => {
-                setDetected(null);
-                setMode("scan");
-                startScan();
-              }}
-              className="px-3 py-2 rounded-lg bg-gray-200 text-sm"
-            >
-              Scan lagi
-            </button>
+            <button onClick={() => router.push(`/isbn/${detected}`)} className="px-3 py-2 rounded-lg bg-black text-white text-sm">Buka detail</button>
+            <button onClick={() => { setDetected(null); setMode("scan"); startScan(); }} className="px-3 py-2 rounded-lg bg-gray-200 text-sm">Scan lagi</button>
           </div>
         </div>
       )}
