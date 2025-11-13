@@ -64,7 +64,7 @@ export default async function IsbnPage({
 }) {
   const { code } = await params;
 
-  // Bangun base URL yang sama dengan request user
+  // ===== Bangun BASE URL yang benar (lokal / Vercel) =====
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const proto =
@@ -76,29 +76,24 @@ export default async function IsbnPage({
   try {
     const res = await fetch(
       `${base}/api/isbn/${encodeURIComponent(code)}`,
-      { cache: "no-store" },
+      { cache: "no-store" }
     );
 
-    try {
-      data = (await res.json()) as IsbnApiResponse;
-    } catch {
-      data = null;
-    }
-
-    // Kalau statusnya bukan 2xx, anggap gagal
     if (!res.ok) {
       data = null;
+    } else {
+      data = (await res.json()) as IsbnApiResponse;
     }
   } catch {
+    // Kalau error jaringan / fetch, anggap belum bisa ditampilkan
     data = null;
   }
 
-  // ❌ Kalau gagal / not found → kirim book=null ke BookDetailModal (UI fallback lama)
+  // Kalau error / not found → kirim book=null ke modal (UI fallback standar)
   if (!data || data.found !== true) {
     return <BookDetailModal open book={null} />;
   }
 
-  // ✅ Berhasil → mapping ke shape yang dipakai modal
   const b = data.book;
 
   const book = {
@@ -127,6 +122,6 @@ export default async function IsbnPage({
     infoLink: b.infoLink ?? "",
   };
 
-  // onOpenChange sengaja tidak dikirim (server component)
+  // UI tetap sama: langsung buka BookDetailModal
   return <BookDetailModal open book={book} />;
 }
