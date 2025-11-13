@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import Link from "next/link";
 import BookDetailModal from "@/components/lighterracy/BookDetailModal";
 
 type ParamsPromise = Promise<{ code: string }>;
@@ -36,6 +37,7 @@ type IsbnApiBook = {
   averageRating?: number | null;
   ratingsCount?: number | null;
 };
+
 type IsbnApiSuccess = { found: true; book: IsbnApiBook };
 type IsbnApiNotFound = { found: false };
 type IsbnApiResponse = IsbnApiSuccess | IsbnApiNotFound;
@@ -61,6 +63,7 @@ export default async function IsbnPage({
 }) {
   const { code } = await params;
 
+  // Bangun origin yang SAMA persis dengan yang kamu pakai di browser
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const proto =
@@ -68,7 +71,6 @@ export default async function IsbnPage({
   const base = `${proto}://${host}`;
 
   let data: IsbnApiResponse | null = null;
-  let ok = false;
 
   try {
     const res = await fetch(
@@ -76,24 +78,52 @@ export default async function IsbnPage({
       { cache: "no-store" },
     );
 
-    ok = res.ok;
-
     try {
+      // Tidak peduli status code-nya, yang penting JSON-nya kebaca
       data = (await res.json()) as IsbnApiResponse;
     } catch {
       data = null;
     }
   } catch {
-    // fetch ke API sendiri gagal (network/timeout)
-    ok = false;
     data = null;
   }
 
-  // Kalau apa pun di atas gagal / tidak found → kirim null ke modal (UI tetap sama)
-  if (!ok || !data || data.found !== true) {
-    return <BookDetailModal open book={null} />;
+  // ❌ CASE: gagal / tidak ditemukan → tampilkan fallback page (bukan blank)
+  if (!data || data.found !== true || !data.book) {
+    return (
+      <main className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center space-y-3">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+            Detail ISBN
+          </p>
+          <h1 className="text-lg font-semibold">
+            Buku belum bisa ditampilkan
+          </h1>
+          <p className="text-sm text-slate-600">
+            Kami belum bisa memuat detail untuk ISBN{" "}
+            <span className="font-mono tracking-wide">{code}</span>. Bisa jadi
+            Google Books sedang sulit diakses atau buku ini belum terdaftar.
+          </p>
+          <div className="pt-2 flex justify-center gap-2">
+            <Link
+              href="/"
+              className="inline-flex items-center rounded-full px-4 py-2 text-sm bg-black text-white"
+            >
+              Kembali ke beranda
+            </Link>
+            <Link
+              href="/#search"
+              className="inline-flex items-center rounded-full px-4 py-2 text-sm border border-slate-300 text-slate-700 bg-white"
+            >
+              Cari ISBN lain
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
   }
 
+  // ✅ CASE: sukses → kirim ke BookDetailModal (UI/UX sama persis)
   const b = data.book;
 
   const book = {
