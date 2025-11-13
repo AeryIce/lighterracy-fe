@@ -36,6 +36,16 @@ type SearchResp = { totalItems?: number; items?: SearchItem[] };
 
 type VolumeResp = { volumeInfo?: VolumeInfoFull };
 
+// --- small logger (dev only) --------------------------------------------
+
+
+const logIsbn = (...args: unknown[]) => {
+  if (process.env.NODE_ENV === "development") {
+    console.log("[ISBN route]", ...args);
+  }
+};
+
+
 // --- handler -------------------------------------------------------------
 
 export async function GET(
@@ -55,13 +65,26 @@ export async function GET(
     printType: "books",
     country: "ID",
     fields:
-      "items(id,selfLink,volumeInfo(title,subtitle,authors,publisher,publishedDate,imageLinks,previewLink,infoLink),searchInfo(textSnippet)),totalItems",
+      "items(id,selfLink,volumeInfo(title,subtitle,authors,publisher,publishedDate,imageLinks,previewLink,infoLink,industryIdentifiers,pageCount,printedPageCount,dimensions,categories,averageRating,ratingsCount,description),searchInfo(textSnippet)),totalItems",
   });
   if (key) qs1.set("key", key);
 
   const url1 = `https://www.googleapis.com/books/v1/volumes?${qs1.toString()}`;
-  const r1 = await fetch(url1, { next: { revalidate: 600 } });
-  if (!r1.ok) return NextResponse.json({ found: false }, { status: 502 });
+
+  let r1: Response;
+  try {
+    logIsbn("Fetching search", { isbn, url1 });
+    r1 = await fetch(url1, { next: { revalidate: 600 } });
+  } catch (error) {
+    // timeout / network error ke Google Books
+    logIsbn("Search fetch failed (timeout / network)", error);
+    return NextResponse.json({ found: false }, { status: 504 });
+  }
+
+  if (!r1.ok) {
+    logIsbn("Search upstream not ok", { status: r1.status });
+    return NextResponse.json({ found: false }, { status: 502 });
+  }
 
   const s: SearchResp = await r1.json();
   const first = s.items?.[0];
@@ -71,8 +94,23 @@ export async function GET(
   const qs2 = new URLSearchParams();
   if (key) qs2.set("key", key);
   const url2 = `${first.selfLink}${qs2.size ? `?${qs2.toString()}` : ""}`;
-  const r2 = await fetch(url2, { next: { revalidate: 600 } });
-  const v: VolumeResp = r2.ok ? await r2.json() : { volumeInfo: first.volumeInfo as VolumeInfoFull };
+
+  let v: VolumeResp = { volumeInfo: first.volumeInfo as VolumeInfoFull };
+
+  try {
+    logIsbn("Fetching volume selfLink", { url2 });
+    const r2 = await fetch(url2, { next: { revalidate: 600 } });
+    if (r2.ok) {
+      v = (await r2.json()) as VolumeResp;
+    } else {
+      logIsbn("Volume upstream not ok, using step1 volumeInfo", {
+        status: r2.status,
+      });
+    }
+  } catch (error) {
+    // Kalau error di step 2, kita pakai data tipis dari step 1 saja
+    logIsbn("Volume fetch failed (timeout / network), using step1 volumeInfo", error);
+  }
 
   // Merge: data lengkap (step 2) override data tipis (step 1)
   const vi: VolumeInfoFull = {

@@ -43,7 +43,6 @@ const scanLog = (...args: unknown[]) => {
     console.log("[ScanModal]", ...args);
   }
 };
-/* eslint-enable no-console */
 
 export default function ScanModal({ open, onOpenChange }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
