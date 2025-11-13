@@ -16,15 +16,29 @@ type IsbnApiBook = {
   textSnippet?: string;
   isbn13?: string | null;
   cover?: string | null; // fallback lama
-  imageLinks?: { thumbnail?: string; smallThumbnail?: string; medium?: string; large?: string } | null;
+  imageLinks?:
+    | {
+        smallThumbnail?: string;
+        thumbnail?: string;
+        medium?: string;
+        large?: string;
+      }
+    | null;
   pageCount?: number | null;
   printedPageCount?: number | null;
   dimensions?: { height?: string; width?: string; thickness?: string } | null;
-  dimensionsCm?: { heightCm?: number; widthCm?: number; thicknessCm?: number } | null;
+  dimensionsCm?: {
+    heightCm?: number;
+    widthCm?: number;
+    thicknessCm?: number;
+  } | null;
   categories?: string[];
   averageRating?: number | null;
   ratingsCount?: number | null;
+  previewLink?: string;
+  infoLink?: string;
 };
+
 type IsbnApiSuccess = { found: true; book: IsbnApiBook };
 type IsbnApiNotFound = { found: false };
 type IsbnApiResponse = IsbnApiSuccess | IsbnApiNotFound;
@@ -34,29 +48,49 @@ function httpsify(u?: string | null) {
   return u.startsWith("http://") ? u.replace("http://", "https://") : u;
 }
 
-export async function generateMetadata({ params }: { params: ParamsPromise }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: ParamsPromise;
+}): Promise<Metadata> {
   const { code } = await params;
   return { title: `ISBN ${code} · Lighterracy` };
 }
 
-export default async function IsbnPage({ params }: { params: ParamsPromise }) {
+export default async function IsbnPage({
+  params,
+}: {
+  params: ParamsPromise;
+}) {
   const { code } = await params;
 
+  // ===== Bangun BASE URL yang benar (lokal / Vercel) =====
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (process.env.VERCEL ? "https" : "http");
+  const proto =
+    h.get("x-forwarded-proto") ?? (process.env.VERCEL ? "https" : "http");
   const base = `${proto}://${host}`;
 
-  const res = await fetch(`${base}/api/isbn/${encodeURIComponent(code)}`, { cache: "no-store" });
-
   let data: IsbnApiResponse | null = null;
+
   try {
-    data = (await res.json()) as IsbnApiResponse;
+    const res = await fetch(
+      `${base}/api/isbn/${encodeURIComponent(code)}`,
+      { cache: "no-store" }
+    );
+
+    if (!res.ok) {
+      data = null;
+    } else {
+      data = (await res.json()) as IsbnApiResponse;
+    }
   } catch {
+    // Kalau error jaringan / fetch, anggap belum bisa ditampilkan
     data = null;
   }
 
-  if (!res.ok || !data || data.found !== true) {
+  // Kalau error / not found → kirim book=null ke modal (UI fallback standar)
+  if (!data || data.found !== true) {
     return <BookDetailModal open book={null} />;
   }
 
@@ -68,13 +102,14 @@ export default async function IsbnPage({ params }: { params: ParamsPromise }) {
     authors: b.authors ?? [],
     publisher: b.publisher || "",
     publishedDate: b.publishedDate || "",
-    description: b.description || "",     // <- kirim description langsung
+    description: b.description || "",
     textSnippet: b.textSnippet || "",
     isbn13: b.isbn13 ?? null,
     imageLinks: {
       large: httpsify(b.imageLinks?.large),
       medium: httpsify(b.imageLinks?.medium),
-      thumbnail: httpsify(b.imageLinks?.thumbnail) ?? httpsify(b.cover), // fallback ke cover lama
+      thumbnail:
+        httpsify(b.imageLinks?.thumbnail) ?? httpsify(b.cover),
       smallThumbnail: httpsify(b.imageLinks?.smallThumbnail),
     },
     pageCount: b.printedPageCount ?? b.pageCount ?? null,
@@ -83,8 +118,10 @@ export default async function IsbnPage({ params }: { params: ParamsPromise }) {
     categories: b.categories ?? [],
     averageRating: b.averageRating ?? null,
     ratingsCount: b.ratingsCount ?? null,
+    previewLink: b.previewLink ?? "",
+    infoLink: b.infoLink ?? "",
   };
 
-  // onOpenChange sengaja tidak dikirim (server component).
+  // UI tetap sama: langsung buka BookDetailModal
   return <BookDetailModal open book={book} />;
 }
