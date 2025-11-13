@@ -63,7 +63,7 @@ export default async function IsbnPage({
 }) {
   const { code } = await params;
 
-  // Bangun origin yang SAMA persis dengan yang kamu pakai di browser
+  // 🔗 Bangun origin yang sama persis dengan request user
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const proto =
@@ -79,7 +79,7 @@ export default async function IsbnPage({
     );
 
     try {
-      // Tidak peduli status code-nya, yang penting JSON-nya kebaca
+      // Jangan lihat status, lihat isi JSON-nya
       data = (await res.json()) as IsbnApiResponse;
     } catch {
       data = null;
@@ -88,7 +88,7 @@ export default async function IsbnPage({
     data = null;
   }
 
-  // ❌ CASE: gagal / tidak ditemukan → tampilkan fallback page (bukan blank)
+  // ❌ CASE: gagal / tidak ditemukan → fallback (UI sama kayak sebelumnya)
   if (!data || data.found !== true || !data.book) {
     return (
       <main className="min-h-[80vh] flex items-center justify-center px-4">
