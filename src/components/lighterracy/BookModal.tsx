@@ -144,7 +144,7 @@ export default function BookModal({ open, onOpenChange, book }: Props) {
           {/* Cover */}
           <div className="relative w-full h-[300px] md:h-[360px] rounded-xl overflow-hidden bg-neutral-100">
             <Image
-              src={cover}
+              src={cover || "/og/og-from-upload.png"}
               alt={book.title || "Book cover"}
               fill
               className="object-cover"
@@ -169,8 +169,24 @@ export default function BookModal({ open, onOpenChange, book }: Props) {
               className="mt-3 text-[15px] leading-relaxed text-neutral-800 line-clamp-5"
               dangerouslySetInnerHTML={{ __html: shortHtml }}
             />
-            {err && <div className="mt-2 text-xs text-red-600">{err}</div>}
-            {loading && <div className="mt-2 text-xs text-neutral-500">Memuat detail…</div>}
+
+            {/* STATUS: loading / error / info */}
+            <div className="mt-2 text-xs">
+              {loading ? (
+                <div className="flex items-center gap-2 text-neutral-600">
+                  <span className="inline-block h-3 w-3 rounded-full bg-neutral-400 animate-pulse" />
+                  <span>Sedang mencari detail di database…</span>
+                </div>
+              ) : err ? (
+                <div className="text-amber-700">
+                  {err} Silakan coba lagi atau cari manual via menu <b>Cari Buku</b>.
+                </div>
+              ) : full && !full.isbn13 ? (
+                <div className="text-neutral-600">
+                  Detail ditemukan. ISBN-13 belum tersedia dari sumber ini.
+                </div>
+              ) : null}
+            </div>
 
             <div className="mt-5 flex gap-2">
               <button
@@ -191,12 +207,6 @@ export default function BookModal({ open, onOpenChange, book }: Props) {
                 Tutup
               </button>
             </div>
-
-            {!full?.isbn13 && book.isbn && (
-              <div className="mt-3 text-[12px] text-amber-700">
-                ISBN-13 tidak terdeteksi dari sumber ini. Silakan cari manual via menu <b>Cari Buku</b>.
-              </div>
-            )}
           </div>
         </div>
       </div>
