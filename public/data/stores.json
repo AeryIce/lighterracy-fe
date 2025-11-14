@@ -2399,7 +2399,9 @@
     "place_id": null,
     "google_maps_url": "https://www.google.com/maps/place/Periplus/@-6.2439752,106.7805447,17z/data=!3m2!4b1!5s0x2e69f110ca9fefab:0xdde73a45d382ee4d!4m6!3m5!1s0x2e69f1174b32741f:0x3685871b9c9da15!8m2!3d-6.2439752!4d106.783125!16s%2Fg%2F1tfr7l_1?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "category": "Tenant",
-    "tags": [],
+    "tags": [
+      "Mall"
+    ],
     "mall": "Gandaria City",
     "region": null,
     "timezone": null,
@@ -2613,23 +2615,40 @@
     "_filled_latlng_from": "auto:maps_url"
   },
   {
-    "id": "periplus-buybooksfromhome",
-    "name": "Periplus #buybooksfromhome",
-    "slug": "periplus-buybooksfromhome",
+    "id": "Periplus Direct Selling",
+    "name": "Periplus Direct Selling",
+    "slug": "Periplus-Direct-Selling",
     "lat": -6.202997,
     "lng": 106.91454,
     "address": "Jl. Rawa Gelam IV No.9, Kawasan Industri Pulogadung, Jakarta Timur, Jakarta Timur",
     "phone": "6281770094907",
     "place_id": null,
-    "google_maps_url": "https://www.google.com/maps/search/-6.202997,106.914540",
+    "google_maps_url": "",
     "category": "Store",
-    "tags": [],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "tags": [
+      "Jakarta Timur"
+    ],
+    "mall": "Periplus Head Office",
+    "region": "Jakarta Timur",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusDirectSelling1_hs5gl1",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763101647/PeriplusDirectSelling1_hs5gl1.webp",
+        "alt": "Interior <Periplus Direct Selling>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusDirectSelling2_nt5d7t",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763101607/PeriplusDirectSelling2_nt5d7t.webp",
+        "alt": "Suasana <Periplus Direct Selling>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
       "10:00-22:00"
     ],
@@ -2651,7 +2670,7 @@
     "hours.sun": [
       "10:00-22:00"
     ],
-    "links.maps": "https://www.google.com/maps/search/-6.202997,106.914540",
+    "links.maps": "https://www.google.com/maps/place/Periplus+BBFH+-+Buy+Book+From+Home/@-6.2031593,106.9122941,17z/data=!3m1!4b1!4m6!3m5!1s0x2e698b2fe561d7a9:0xb122890f86f7d3e!8m2!3d-6.2031593!4d106.9148744!16s%2Fg%2F11rtp3spv7?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6281770094907",
     "links.tel": null,
     "data_quality.missing_latlng": false,
@@ -2659,13 +2678,13 @@
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusDirectSellingPilot_z0arg0",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763101648/PeriplusDirectSellingPilot_z0arg0.webp",
     "photo.alt": "Periplus #buybooksfromhome Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "QWW7+PW",
+    "plus_code.compound": "QWW7+PW Jatinegara, East Jakarta City, Jakarta",
     "_filled_mall_from": null,
     "_filled_category_from": null,
     "_filled_latlng_from": null
@@ -2674,61 +2693,76 @@
     "id": "periplus-halim-perdanakusuma-airport-gate-8",
     "name": "Periplus Halim Perdanakusuma Airport Gate 8",
     "slug": "periplus-halim-perdanakusuma-airport-gate-8",
-    "lat": null,
-    "lng": null,
+    "lat": -6.2657995,
+    "lng": 106.8809206,
     "address": "Jl. Halim Perdanakusuma, Jakarta Timur",
     "phone": "6287782866045",
     "place_id": null,
-    "google_maps_url": "https://maps.app.goo.gl/NokW5AAydPF7FkyN7",
-    "category": "Store",
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+Halim+Perdanakusuma/@-6.2657995,106.8809206,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f2e7cc950f03:0xfda6e06a373ce499!8m2!3d-6.2657995!4d106.8857862!16s%2Fg%2F11fxb218qn?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
     "tags": [
       "Airport"
     ],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "mall": "Bandara Halim Perdanakusuma",
+    "region": "Jakarta Timur",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusHalimPerdanaKusuma1_ukplki",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763102376/PeriplusHalimPerdanaKusuma1_ukplki.webp",
+        "alt": "Interior <Periplus Bandara Halim Perdanakusuma>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusHalimPerdanaKusuma2_ft4vaz",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763102372/PeriplusHalimPerdanaKusuma2_ft4vaz.webp",
+        "alt": "Suasana <Periplus Bandara Halim Perdanakusuma>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
-      "05:00-20:00"
+      "05:00-17:00"
     ],
     "hours.tue": [
-      "05:00-20:00"
+      "05:00-17:00"
     ],
     "hours.wed": [
-      "05:00-20:00"
+      "05:00-17:00"
     ],
     "hours.thu": [
-      "05:00-20:00"
+      "05:00-17:00"
     ],
     "hours.fri": [
-      "05:00-20:00"
+      "05:00-17:00"
     ],
     "hours.sat": [
-      "05:00-20:00"
+      "05:00-17:00"
     ],
     "hours.sun": [
-      "05:00-20:00"
+      "05:00-17:00"
     ],
-    "links.maps": "https://maps.app.goo.gl/NokW5AAydPF7FkyN7",
+    "links.maps": "https://www.google.com/maps/place/Periplus+Halim+Perdanakusuma/@-6.2657995,106.8809206,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f2e7cc950f03:0xfda6e06a373ce499!8m2!3d-6.2657995!4d106.8857862!16s%2Fg%2F11fxb218qn?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6287782866045",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusHalimPerdanaKusumaPilot_uhqvqf",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763102377/PeriplusHalimPerdanaKusumaPilot_uhqvqf.webp",
     "photo.alt": "Periplus Halim Perdanakusuma Airport Gate 8 Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "PVMP+M8",
+    "plus_code.compound": "PVMP+M8 Halim Perdanakusuma, East Jakarta City, Jakarta",
     "_filled_mall_from": null,
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-halim-perdanakusuma-gate-6",
@@ -2739,37 +2773,54 @@
     "address": "Jl. Halim Perdanakusuma, Jakarta Timur",
     "phone": "6287782866055",
     "place_id": null,
-    "google_maps_url": "https://www.google.com/maps/search/-6.266389,106.891111",
-    "category": "Store",
-    "tags": [],
-    "mall": null,
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+Halim+Perdanakusuma/@-6.2657995,106.8809206,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f2e7cc950f03:0xfda6e06a373ce499!8m2!3d-6.2657995!4d106.8857862!16s%2Fg%2F11fxb218qn?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
+    "tags": [
+      "Airport"
+    ],
+    "mall": "Bandara Halim Perdanakusuma",
     "region": null,
     "timezone": null,
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusHalimPerdanaKusuma21_zf9gby",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763102370/PeriplusHalimPerdanaKusuma21_zf9gby.webp",
+        "alt": "Interior <Periplus Bandara Halim Perdanakusuma>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusHalimPerdanaKusuma22_vbrxvu",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763102370/PeriplusHalimPerdanaKusuma22_vbrxvu.webp",
+        "alt": "Suasana <Periplus Bandara Halim Perdanakusuma>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
-      "05:00-19:00"
+      "05:00-17:00"
     ],
     "hours.tue": [
-      "05:00-19:00"
+      "05:00-17:00"
     ],
     "hours.wed": [
-      "05:00-19:00"
+      "05:00-17:00"
     ],
     "hours.thu": [
-      "05:00-19:00"
+      "05:00-17:00"
     ],
     "hours.fri": [
-      "05:00-19:00"
+      "05:00-17:00"
     ],
     "hours.sat": [
-      "05:00-19:00"
+      "05:00-17:00"
     ],
     "hours.sun": [
-      "05:00-19:00"
+      "05:00-17:00"
     ],
-    "links.maps": "https://www.google.com/maps/search/-6.266389,106.891111",
+    "links.maps": "https://www.google.com/maps/place/Periplus+Halim+Perdanakusuma/@-6.2657995,106.8809206,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f2e7cc950f03:0xfda6e06a373ce499!8m2!3d-6.2657995!4d106.8857862!16s%2Fg%2F11fxb218qn?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6287782866055",
     "links.tel": null,
     "data_quality.missing_latlng": false,
@@ -2777,13 +2828,13 @@
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusHalimPerdanaKusuma2Pilot_emhixe",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763102371/PeriplusHalimPerdanaKusuma2Pilot_emhixe.webp",
     "photo.alt": "Periplus Halim Perdanakusuma Gate 6 Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "PVMP+M8",
+    "plus_code.compound": "PVMP+M8 Halim Perdanakusuma, East Jakarta City, Jakarta",
     "_filled_mall_from": null,
     "_filled_category_from": null,
     "_filled_latlng_from": null
@@ -2868,20 +2919,38 @@
     "id": "periplus-heritage-bandung",
     "name": "Periplus Heritage Bandung",
     "slug": "periplus-heritage-bandung",
-    "lat": null,
-    "lng": null,
+    "lat": -6.9056938,
+    "lng": 107.6148086,
     "address": "Lt.2 Heritage Lifestyle Hub, Jl. LLRE Martadinata St No.65, Citarum, Bandung Wetan, Bandung",
     "phone": "6285950098463",
     "place_id": null,
-    "google_maps_url": "https://maps.app.goo.gl/zBbbf8HHc9FxdgzF6",
-    "category": "Store",
-    "tags": [],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+Bookshop+Heritage/@-6.9056938,107.6148086,17z/data=!3m1!4b1!4m6!3m5!1s0x2e68e71532d4380f:0xd0206107fa4f6eb9!8m2!3d-6.9056938!4d107.6173889!16s%2Fg%2F11vc2r_gph?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
+    "tags": [
+      "Bandung",
+      "Mall"
+    ],
+    "mall": "Heritage Factory Outlet & Lifestyle Hub",
+    "region": "Bandung",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusHeritageBandung1_x0ko5p",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763103255/PeriplusHeritageBandung1_x0ko5p.webp",
+        "alt": "Interior <Periplus Heritage Bandung>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusHeritageBandung2_awetxq",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763103255/PeriplusHeritageBandung2_awetxq.webp",
+        "alt": "Suasana <Periplus Heritage Bandung>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
       "07:00-22:00"
     ],
@@ -2903,43 +2972,61 @@
     "hours.sun": [
       "07:00-22:00"
     ],
-    "links.maps": "https://maps.app.goo.gl/zBbbf8HHc9FxdgzF6",
+    "links.maps": "https://www.google.com/maps/place/Periplus+Bookshop+Heritage/@-6.9056938,107.6148086,17z/data=!3m1!4b1!4m6!3m5!1s0x2e68e71532d4380f:0xd0206107fa4f6eb9!8m2!3d-6.9056938!4d107.6173889!16s%2Fg%2F11vc2r_gph?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6285950098463",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusHeritageBandungPilot_wsu6ec",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763103255/PeriplusHeritageBandungPilot_wsu6ec.webp",
     "photo.alt": "Periplus Heritage Bandung Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "3JV8+PX",
+    "plus_code.compound": "3JV8+PX Citarum, Bandung City, West Java",
     "_filled_mall_from": null,
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-setiabudi-supermarket",
     "name": "Periplus Setiabudi Supermarket",
     "slug": "periplus-setiabudi-supermarket",
-    "lat": null,
-    "lng": null,
+    "lat": -6.8823938,
+    "lng": 107.59906,
     "address": "Setiabudhi Supermarket,, Jl. Dr Setiabudi No 42 & 46, Bandung",
     "phone": "6287782866060",
     "place_id": null,
-    "google_maps_url": "https://maps.app.goo.gl/ysGAdBAyWgJ1ZLRJ6",
-    "category": "Store",
-    "tags": [],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+Setiabudi+Supermarket/@-6.8823938,107.59906,17z/data=!3m1!4b1!4m6!3m5!1s0x2e68e69594080d9d:0x35123d48c72af383!8m2!3d-6.8823938!4d107.6016403!16s%2Fg%2F1tf4_5r6?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
+    "tags": [
+      "Bandung",
+      "Mall"
+    ],
+    "mall": "Setiabudi Market",
+    "region": "Bandung",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusSetiabudiBandung1_tev3bz",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763103596/PeriplusSetiabudiBandung1_tev3bz.webp",
+        "alt": "Interior <Periplus Setiabudi Bandung>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusSetiabudiBandung2_nbgpok",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763103596/PeriplusSetiabudiBandung2_nbgpok.webp",
+        "alt": "Suasana <Periplus Setiabudi Bandung>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
       "08:00-20:30"
     ],
@@ -2961,43 +3048,61 @@
     "hours.sun": [
       "08:00-20:30"
     ],
-    "links.maps": "https://maps.app.goo.gl/ysGAdBAyWgJ1ZLRJ6",
+    "links.maps": "https://www.google.com/maps/place/Periplus+Setiabudi+Supermarket/@-6.8823938,107.59906,17z/data=!3m1!4b1!4m6!3m5!1s0x2e68e69594080d9d:0x35123d48c72af383!8m2!3d-6.8823938!4d107.6016403!16s%2Fg%2F1tf4_5r6?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6287782866060",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusSetiabudiBandungPilot_f51cnt",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763103806/PeriplusSetiabudiBandungPilot_f51cnt.webp",
     "photo.alt": "Periplus Setiabudi Supermarket Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "4J92+2M",
+    "plus_code.compound": "4J92+2M Hegarmanah, Bandung City, West Java",
     "_filled_mall_from": null,
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-kota-baru-parahyangan",
     "name": "Periplus Kota Baru Parahyangan",
     "slug": "periplus-kota-baru-parahyangan",
-    "lat": null,
-    "lng": null,
+    "lat": -6.8664656,
+    "lng": 107.4620221,
     "address": "YOGYA Junction Parahyangan, Gate Sogan, Ground Floor, Kota Baru Parahyangan, Bandung Barat 40553, Kab. Bandung Barat",
     "phone": "628175721780",
     "place_id": null,
-    "google_maps_url": "https://maps.app.goo.gl/bzihzx4fAErCQHAa7",
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+Bookshop+Kota+Baru+Parahyangan/@-6.8664656,107.4620221,17z/data=!3m1!4b1!4m6!3m5!1s0x2e68e522e61791dd:0xc54760f5cc5b4c8a!8m2!3d-6.8664656!4d107.4646024!16s%2Fg%2F11vwdwzm8z?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "category": "Store",
-    "tags": [],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "tags": [
+      "Bandung",
+      "Mall"
+    ],
+    "mall": "Kota Baru Parahyangan",
+    "region": "Bandung",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusKotabaruParahyangan1_cgrhkt",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763104129/PeriplusKotabaruParahyangan1_cgrhkt.webp",
+        "alt": "Interior <Periplus Kota Baru Parahyangan>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusKotabaruParahyangan2_pws0cd",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763104132/PeriplusKotabaruParahyangan2_pws0cd.webp",
+        "alt": "Suasana <Periplus Kota Baru Parahyangan>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
       "07:00-22:00"
     ],
@@ -3019,84 +3124,99 @@
     "hours.sun": [
       "07:00-22:00"
     ],
-    "links.maps": "https://maps.app.goo.gl/bzihzx4fAErCQHAa7",
+    "links.maps": "https://www.google.com/maps/place/Periplus+Bookshop+Kota+Baru+Parahyangan/@-6.8664656,107.4620221,17z/data=!3m1!4b1!4m6!3m5!1s0x2e68e522e61791dd:0xc54760f5cc5b4c8a!8m2!3d-6.8664656!4d107.4646024!16s%2Fg%2F11vwdwzm8z?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/628175721780",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusKotabaruParahyanganPilot_esceob",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763104128/PeriplusKotabaruParahyanganPilot_esceob.webp",
     "photo.alt": "Periplus Kota Baru Parahyangan Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "4FM7+CR",
+    "plus_code.compound": "4FM7+CR Kertajaya, West Bandung Regency, West Java",
     "_filled_mall_from": null,
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-semarang",
     "name": "Periplus Semarang",
     "slug": "periplus-semarang",
-    "lat": null,
-    "lng": null,
+    "lat": -6.9665204,
+    "lng": 110.3721127,
     "address": "Ahmad Yani International Airport, Semarang",
     "phone": "6287782866073",
     "place_id": null,
-    "google_maps_url": "https://www.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-6.974195,110.375543&spn=0.001688,0.00284&t=m&z=19&vpsrc=6&iwloc=0004bab222369b9d8e3cf",
+    "google_maps_url": "https://www.google.com/maps/place/Periplus/@-6.9665204,110.3721127,17z/data=!3m1!4b1!4m6!3m5!1s0x2e70f52bd4f3d6ad:0xdc9061e66d21aa88!8m2!3d-6.9665204!4d110.374693!16s%2Fg%2F1tf4bfxr?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "category": "Store",
     "tags": [
       "Airport"
     ],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "mall": "Bandara Ahmad Yani",
+    "region": "Jawa Tengah",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusBandaraAhmadYani1_yyes4v",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763104615/PeriplusBandaraAhmadYani1_yyes4v.webp",
+        "alt": "Interior <Periplus Bandara Ahmad Yani>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusBandaraAhmadYani2_ro6uxx",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763104614/PeriplusBandaraAhmadYani2_ro6uxx.webp",
+        "alt": "Suasana <Periplus Bandara Ahmad Yani>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
-      "04:30-19:30"
+      "05:30-18:00"
     ],
     "hours.tue": [
-      "04:30-19:30"
+      "05:30-18:00"
     ],
     "hours.wed": [
-      "04:30-19:30"
+      "05:30-18:00"
     ],
     "hours.thu": [
-      "04:30-19:30"
+      "05:30-18:00"
     ],
     "hours.fri": [
-      "04:30-19:30"
+      "05:30-18:00"
     ],
     "hours.sat": [
-      "04:30-19:30"
+      "05:30-18:00"
     ],
     "hours.sun": [
-      "04:30-19:30"
+      "05:30-18:00"
     ],
-    "links.maps": "https://www.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-6.974195,110.375543&spn=0.001688,0.00284&t=m&z=19&vpsrc=6&iwloc=0004bab222369b9d8e3cf",
+    "links.maps": "https://www.google.com/maps/place/Periplus/@-6.9665204,110.3721127,17z/data=!3m1!4b1!4m6!3m5!1s0x2e70f52bd4f3d6ad:0xdc9061e66d21aa88!8m2!3d-6.9665204!4d110.374693!16s%2Fg%2F1tf4bfxr?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6287782866073",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusBandaraAhmadYaniPilot_dcweaq",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763104617/PeriplusBandaraAhmadYaniPilot_dcweaq.webp",
     "photo.alt": "Periplus Semarang Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "29MF+9V",
+    "plus_code.compound": "29MF+9V Tambakharjo, Semarang City, Central Java",
     "_filled_mall_from": null,
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-tentrem-mall",
@@ -3107,25 +3227,54 @@
     "address": "Jalan Gajah Mada 123, Semarang",
     "phone": "6287729246594",
     "place_id": null,
-    "google_maps_url": "https://www.google.com/maps/search/-6.98693,110.42236",
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+Tentrem+Mall/@-6.9869935,110.4193172,17z/data=!3m1!4b1!4m6!3m5!1s0x2e708be0b9b42695:0x94627d54204ca180!8m2!3d-6.9869935!4d110.4218975!16s%2Fg%2F11kptskrr1?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "category": "Store",
     "tags": [
       "Mall"
     ],
     "mall": "Tentrem Mall",
-    "region": null,
-    "timezone": null,
+    "region": "Jawa Tengah",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
-    "hours.mon": [],
-    "hours.tue": [],
-    "hours.wed": [],
-    "hours.thu": [],
-    "hours.fri": [],
-    "hours.sat": [],
-    "hours.sun": [],
-    "links.maps": "https://www.google.com/maps/search/-6.98693,110.42236",
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusTentremMallSemarang1_mf37oo",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763105026/PeriplusTentremMallSemarang1_mf37oo.webp",
+        "alt": "Interior <Periplus Tentrem Mall>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusTentremMallSemarang2_qwewh8",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763105025/PeriplusTentremMallSemarang2_qwewh8.webp",
+        "alt": "Suasana <Periplus Tentrem Mall>",
+        "role": "ambience"
+      }
+    ],
+    "hours.mon": [
+      "10:00-22:00"
+    ],
+    "hours.tue": [
+      "10:00-22:00"
+    ],
+    "hours.wed": [
+      "10:00-22:00"
+    ],
+    "hours.thu": [
+      "10:00-22:00"
+    ],
+    "hours.fri": [
+      "10:00-22:00"
+    ],
+    "hours.sat": [
+      "10:00-22:00"
+    ],
+    "hours.sun": [
+      "10:00-22:00"
+    ],
+    "links.maps": "https://www.google.com/maps/place/Periplus+Tentrem+Mall/@-6.9869935,110.4193172,17z/data=!3m1!4b1!4m6!3m5!1s0x2e708be0b9b42695:0x94627d54204ca180!8m2!3d-6.9869935!4d110.4218975!16s%2Fg%2F11kptskrr1?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6287729246594",
     "links.tel": null,
     "data_quality.missing_latlng": false,
@@ -3133,13 +3282,13 @@
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusTentremMallSemarangPilot_vkqwje",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763105027/PeriplusTentremMallSemarangPilot_vkqwje.webp",
     "photo.alt": "Periplus Tentrem Mall Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "2C7C+6Q",
+    "plus_code.compound": "2C7C+6Q Pekunden, Semarang City, Central Java",
     "_filled_mall_from": "heuristic(text)",
     "_filled_category_from": null,
     "_filled_latlng_from": null
@@ -3148,22 +3297,37 @@
     "id": "periplus-solo-paragon",
     "name": "Periplus Solo Paragon",
     "slug": "periplus-solo-paragon",
-    "lat": null,
-    "lng": null,
+    "lat": -7.5627427,
+    "lng": 110.8071409,
     "address": "Solo Paragon Lifestyle Mall, Lantai GF, Jl. Yosodipuro No.133, Mangkubumen, Kec. Banjarsari, Surakarta",
     "phone": "6287782866072",
     "place_id": null,
-    "google_maps_url": "https://www.google.com/maps/search/,",
-    "category": "Store",
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+Bookshop+Paragon+Mall+Solo/@-7.5627427,110.8071409,17z/data=!3m1!4b1!4m6!3m5!1s0x2e7a1700139109b1:0x95d85e35dbf34b3b!8m2!3d-7.5627427!4d110.8097212!16s%2Fg%2F11y4n0v3qf?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
     "tags": [
       "Mall"
     ],
     "mall": "Solo Paragon",
-    "region": null,
-    "timezone": null,
+    "region": "Jawa Tengah",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusParagonSolo1_iyhkeg",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763105293/PeriplusParagonSolo1_iyhkeg.webp",
+        "alt": "Interior <Periplus Solo Paragon>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusParagonSolo2_c6cnnr",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763105292/PeriplusParagonSolo2_c6cnnr.webp",
+        "alt": "Suasana <Periplus Solo Paragon>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
       "10:00-22:00"
     ],
@@ -3185,43 +3349,61 @@
     "hours.sun": [
       "10:00-22:00"
     ],
-    "links.maps": "https://www.google.com/maps/search/,",
+    "links.maps": "https://www.google.com/maps/place/Periplus+Bookshop+Paragon+Mall+Solo/@-7.5627427,110.8071409,17z/data=!3m1!4b1!4m6!3m5!1s0x2e7a1700139109b1:0x95d85e35dbf34b3b!8m2!3d-7.5627427!4d110.8097212!16s%2Fg%2F11y4n0v3qf?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6287782866072",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusParagonSoloPilot_d3occg",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763105293/PeriplusParagonSoloPilot_d3occg.webp",
     "photo.alt": "Periplus Solo Paragon Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "CRP5+WV",
+    "plus_code.compound": "CRP5+WV Mangkubumen, Surakarta City, Central Java",
     "_filled_mall_from": "heuristic(text)",
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-ranch-market-malang",
     "name": "Periplus Ranch Market Malang",
     "slug": "periplus-ranch-market-malang",
-    "lat": null,
-    "lng": null,
+    "lat": -7.9745667,
+    "lng": 112.6150625,
     "address": "Jalan Kawi Atas No. 58, Gadingkasri, Klojen, Malang, Malang",
     "phone": "62819322450",
     "place_id": null,
-    "google_maps_url": "https://www.google.com/maps/search/,",
-    "category": "Store",
-    "tags": [],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+Bookshop+Ranch+Market+Malang/@-7.9745667,112.6150625,17z/data=!3m1!4b1!4m6!3m5!1s0x2e7883432c72af21:0x3b9e5be5c4492281!8m2!3d-7.9745667!4d112.6176428!16s%2Fg%2F11sf81kd1r?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
+    "tags": [
+      "Jawa Timur",
+      "Mall"
+    ],
+    "mall": "Ranch Market Malang",
+    "region": "Jawa Timur",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusRanchMarketMalang1_zciwhq",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763105789/PeriplusRanchMarketMalang1_zciwhq.webp",
+        "alt": "Interior <Periplus Ranch Market Malang>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusRanchMarketMalang2_lunrqv",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763105788/PeriplusRanchMarketMalang2_lunrqv.webp",
+        "alt": "Suasana <Periplus Ranch Market Malang>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
       "10:00-22:00"
     ],
@@ -3243,24 +3425,24 @@
     "hours.sun": [
       "10:00-22:00"
     ],
-    "links.maps": "https://www.google.com/maps/search/,",
+    "links.maps": "https://www.google.com/maps/place/Periplus+Bookshop+Ranch+Market+Malang/@-7.9745667,112.6150625,17z/data=!3m1!4b1!4m6!3m5!1s0x2e7883432c72af21:0x3b9e5be5c4492281!8m2!3d-7.9745667!4d112.6176428!16s%2Fg%2F11sf81kd1r?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/62819322450",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusRanchMarketMalangPilot_in27hd",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763105792/PeriplusRanchMarketMalangPilot_in27hd.webp",
     "photo.alt": "Periplus Ranch Market Malang Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "2JG9+53",
+    "plus_code.compound": "2JG9+53 Gading Kasri, Malang City, East Java",
     "_filled_mall_from": null,
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-juanda-gate-4",
@@ -3386,22 +3568,37 @@
     "id": "periplus-galaxy-mall",
     "name": "Periplus Galaxy Mall",
     "slug": "periplus-galaxy-mall",
-    "lat": null,
-    "lng": null,
+    "lat": -7.2763928,
+    "lng": 112.7794127,
     "address": "Lantai Dasar No.060-061, Jl. Dharmahusada Indah Timur No. 35-37., Surabaya",
     "phone": "6287782866069",
     "place_id": null,
-    "google_maps_url": "https://www.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-7.27591,112.782769&spn=0.006747,0.011362&t=m&z=17&vpsrc=6&iwloc=0004bab2fddbc90555c90",
-    "category": "Store",
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+-+Galaxy+Mall/@-7.2763928,112.7794127,17z/data=!3m1!4b1!4m6!3m5!1s0x2dd7fa2348b7aedb:0xae3d0e4e6b467dc5!8m2!3d-7.2763928!4d112.781993!16s%2Fg%2F11g_1tfzn?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
     "tags": [
       "Mall"
     ],
     "mall": "Galaxy Mall",
-    "region": null,
-    "timezone": null,
+    "region": "Jawa Timur",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusGalaxyMall1_jh2ee8",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763106355/PeriplusGalaxyMall1_jh2ee8.webp",
+        "alt": "Interior <Periplus Galaxy Mall>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusGalaxyMall2_zwhtp4",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763106356/PeriplusGalaxyMall2_zwhtp4.webp",
+        "alt": "Suasana <Periplus Galaxy Mall>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
       "10:00-22:00"
     ],
@@ -3423,45 +3620,60 @@
     "hours.sun": [
       "10:00-22:00"
     ],
-    "links.maps": "https://www.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-7.27591,112.782769&spn=0.006747,0.011362&t=m&z=17&vpsrc=6&iwloc=0004bab2fddbc90555c90",
+    "links.maps": "https://www.google.com/maps/place/Periplus+-+Galaxy+Mall/@-7.2763928,112.7794127,17z/data=!3m1!4b1!4m6!3m5!1s0x2dd7fa2348b7aedb:0xae3d0e4e6b467dc5!8m2!3d-7.2763928!4d112.781993!16s%2Fg%2F11g_1tfzn?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6287782866069",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusGalaxyMallPilot_ff8ji4",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763106361/PeriplusGalaxyMallPilot_ff8ji4.webp",
     "photo.alt": "Periplus Galaxy Mall Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "PQFJ+CQ",
+    "plus_code.compound": "PQFJ+CQ Mulyorejo, Surabaya, East Java",
     "_filled_mall_from": "heuristic(text)",
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-pakuwon-supermall-surabaya",
     "name": "Periplus Pakuwon Supermall SURABAYA",
     "slug": "periplus-pakuwon-supermall-surabaya",
-    "lat": null,
-    "lng": null,
+    "lat": -7.2897448,
+    "lng": 112.6722947,
     "address": "Lantai LG 100-101, Jl. Puncak Indah Lontar No. 2, Surabaya",
     "phone": "6287782866068",
     "place_id": null,
-    "google_maps_url": "https://www.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-7.287935,112.678388&spn=0.006747,0.011362&t=m&z=17&vpsrc=6&iwloc=0004bab2fc0236d3e5490",
-    "category": "Store",
+    "google_maps_url": "https://www.google.com/maps/place/Periplus+Pakuwon+Surabaya/@-7.2897448,112.6722947,17z/data=!3m1!4b1!4m6!3m5!1s0x2dd7fc3617487ed1:0xefe564032907386!8m2!3d-7.2897448!4d112.674875!16s%2Fg%2F11g_k766p?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
     "tags": [
       "Mall"
     ],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "mall": "Pakuwon Supermall",
+    "region": "Jawa Timur",
+    "timezone": "Asia/Jakarta",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusPakuwonMall2_otqhwf",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763106365/PeriplusPakuwonMall2_otqhwf.webp",
+        "alt": "Interior <Periplus Pakuwon Supermall SURABAYA>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusPakuwonMall1_yvalz5",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763106356/PeriplusPakuwonMall1_yvalz5.webp",
+        "alt": "Suasana <Periplus Pakuwon Supermall SURABAYA>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
       "10:00-22:00"
     ],
@@ -3483,45 +3695,60 @@
     "hours.sun": [
       "10:00-22:00"
     ],
-    "links.maps": "https://www.google.com/maps/ms?msa=0&msid=211544483517464826928.0004ba9eaf7579d7023c5&ie=UTF8&ll=-7.287935,112.678388&spn=0.006747,0.011362&t=m&z=17&vpsrc=6&iwloc=0004bab2fc0236d3e5490",
+    "links.maps": "https://www.google.com/maps/place/Periplus+Pakuwon+Surabaya/@-7.2897448,112.6722947,17z/data=!3m1!4b1!4m6!3m5!1s0x2dd7fc3617487ed1:0xefe564032907386!8m2!3d-7.2897448!4d112.674875!16s%2Fg%2F11g_k766p?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6287782866068",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusPakuwonMallPilot_nn52dp",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763106363/PeriplusPakuwonMallPilot_nn52dp.webp",
     "photo.alt": "Periplus Pakuwon Supermall SURABAYA Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "PM6F+4W",
+    "plus_code.compound": "PM6F+4W Babatan, Surabaya, East Java",
     "_filled_mall_from": null,
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-bandara-lombok",
     "name": "Periplus Bandara Lombok",
     "slug": "periplus-bandara-lombok",
-    "lat": null,
-    "lng": null,
+    "lat": -8.7607069,
+    "lng": 116.2728972,
     "address": "Jl. Bypass BIL - Mandalika, Tanak Awu, Kec. Pujut, Kabupaten Lombok Tengah, Lombok",
     "phone": "628175721779",
     "place_id": null,
-    "google_maps_url": "https://maps.app.goo.gl/sV2KCezRmgN8bs3P9?g_st=com.google.maps.preview.copy",
-    "category": "Store",
+    "google_maps_url": "https://www.google.com/maps/place/Lombok+International+Airport/@-8.7607069,116.2728972,17z/data=!3m1!4b1!4m6!3m5!1s0x2dcdafb526dcbf7d:0xc3c7d00a4024ad3c!8m2!3d-8.7607069!4d116.2754775!16s%2Fm%2F0cz8dd6?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
     "tags": [
       "Airport"
     ],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "mall": "Bandara Lombok",
+    "region": "Lombok",
+    "timezone": "Asia/Bali",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusBandaraLombok2_ph84x3",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763106901/PeriplusBandaraLombok2_ph84x3.webp",
+        "alt": "Interior <Periplus Bandara Lombok>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusBandaraLombok1_zjvu8d",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763106902/PeriplusBandaraLombok1_zjvu8d.webp",
+        "alt": "Suasana <Periplus Bandara Lombok>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
       "05:00-20:00"
     ],
@@ -3543,24 +3770,23 @@
     "hours.sun": [
       "05:00-20:00"
     ],
-    "links.maps": "https://maps.app.goo.gl/sV2KCezRmgN8bs3P9?g_st=com.google.maps.preview.copy",
-    "links.wa": "https://wa.me/628175721779",
+    "links.maps": "https://www.google.com/maps/place/Lombok+International+Airport/@-8.7607069,116.2728972,17z/data=!3m1!4b1!4m6!3m5!1s0x2dcdafb526dcbf7d:0xc3c7d00a4024ad3c!8m2!3d-8.7607069!4d116.2754775!16s%2Fm%2F0cz8dd6?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.tel": null,
-    "data_quality.missing_latlng": true,
+    "data_quality.missing_latlng": false,
     "data_quality.empty_hours": false,
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusBandaraLombokPilot_ndpuns",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763106903/PeriplusBandaraLombokPilot_ndpuns.webp",
     "photo.alt": "Periplus Bandara Lombok Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "67QG+P5",
+    "plus_code.compound": "67QG+P5 Tanak Awu, Central Lombok Regency, West Nusa Tenggara",
     "_filled_mall_from": null,
     "_filled_category_from": null,
-    "_filled_latlng_from": null
+    "_filled_latlng_from": "auto:maps_url"
   },
   {
     "id": "periplus-labuan-bajo-airport",
@@ -3571,39 +3797,54 @@
     "address": "Terminal Keberangkatan Lt.  2,, Bandar Udara Komodo,, Jl.  Yohanes Sehadun, Labuan Bajo",
     "phone": "6287784224418",
     "place_id": null,
-    "google_maps_url": "https://www.google.com/maps/search/-8.488511,119.887539",
-    "category": "Store",
+    "google_maps_url": "https://www.google.com/maps/place/PERIPLUS+Labuan+Bajo+Airport/@-8.4889279,119.8845314,17z/data=!3m1!4b1!4m6!3m5!1s0x2db465e68b550835:0xa73b30bf9a0d36d4!8m2!3d-8.4889279!4d119.8871117!16s%2Fg%2F11lg4fnyt_?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
+    "category": "Tenant",
     "tags": [
       "Airport"
     ],
-    "mall": null,
-    "region": null,
-    "timezone": null,
+    "mall": "Bandara Labuan Bajo",
+    "region": "Nusa Tenggara Timur",
+    "timezone": "Asia/Makassar",
     "is_active": true,
     "updated_at": "2025-11-12",
-    "images": [],
+    "images": [
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusBandaraLabuanBajo1_sahozk",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763107272/PeriplusBandaraLabuanBajo1_sahozk.webp",
+        "alt": "Interior <Periplus labuan Bajo Airport>",
+        "role": "interior"
+      },
+      {
+        "provider": "cloudinary",
+        "id": "PeriplusBandaraLabuanBajo2_n6jq0j",
+        "url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763107272/PeriplusBandaraLabuanBajo2_n6jq0j.webp",
+        "alt": "Suasana <Periplus labuan Bajo Airport>",
+        "role": "ambience"
+      }
+    ],
     "hours.mon": [
-      "07:00-17:00"
+      "08:00-17:00"
     ],
     "hours.tue": [
-      "07:00-17:00"
+      "08:00-17:00"
     ],
     "hours.wed": [
-      "07:00-17:00"
+      "08:00-17:00"
     ],
     "hours.thu": [
-      "07:00-17:00"
+      "08:00-17:00"
     ],
     "hours.fri": [
-      "07:00-17:00"
+      "08:00-17:00"
     ],
     "hours.sat": [
-      "07:00-17:00"
+      "08:00-17:00"
     ],
     "hours.sun": [
-      "07:00-17:00"
+      "08:00-17:00"
     ],
-    "links.maps": "https://www.google.com/maps/search/-8.488511,119.887539",
+    "links.maps": "https://www.google.com/maps/place/PERIPLUS+Labuan+Bajo+Airport/@-8.4889279,119.8845314,17z/data=!3m1!4b1!4m6!3m5!1s0x2db465e68b550835:0xa73b30bf9a0d36d4!8m2!3d-8.4889279!4d119.8871117!16s%2Fg%2F11lg4fnyt_?entry=ttu&g_ep=EgoyMDI1MTExMS4wIKXMDSoASAFQAw%3D%3D",
     "links.wa": "https://wa.me/6287784224418",
     "links.tel": null,
     "data_quality.missing_latlng": false,
@@ -3611,13 +3852,13 @@
     "data_quality.wa_link_ok": true,
     "data_quality.maps_link_present": true,
     "data_quality.phone_suspicious": false,
-    "photo.provider": null,
-    "photo.id": null,
-    "photo.url": null,
+    "photo.provider": "cloudinary",
+    "photo.id": "PeriplusBandaraLabuanBajoPilot_xnovys",
+    "photo.url": "https://res.cloudinary.com/dmwstlk3b/image/upload/v1763107274/PeriplusBandaraLabuanBajoPilot_xnovys.webp",
     "photo.alt": "Periplus Labuan Bajo Airport Storefront",
     "photo.blurhash": null,
-    "plus_code.short": "",
-    "plus_code.compound": "",
+    "plus_code.short": "GV6P+CR",
+    "plus_code.compound": "GV6P+CR Batu Cermin, West Manggarai Regency, East Nusa Tenggara",
     "_filled_mall_from": null,
     "_filled_category_from": null,
     "_filled_latlng_from": null

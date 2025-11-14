@@ -128,12 +128,14 @@ export default function StoreGrid() {
       ...s,
       distanceKm: s.lat != null && s.lng != null ? haversineKm(me, { lat: s.lat, lng: s.lng }) : null,
     }));
-    return withDist.sort((a, b) => {
-      if (a.distanceKm == null && b.distanceKm == null) return 0;
-      if (a.distanceKm == null) return 1;
-      if (b.distanceKm == null) return -1;
-      return (a.distanceKm! - b.distanceKm!);
-    });
+    return withDist
+      .sort((a, b) => {
+        if (a.distanceKm == null && b.distanceKm == null) return 0;
+        if (a.distanceKm == null) return 1;
+        if (b.distanceKm == null) return -1;
+        return (a.distanceKm! - b.distanceKm!);
+      })
+      .slice(0, 5);
   }, [raw, me]);
 
   if (!stores.length) return null;
@@ -157,10 +159,13 @@ export default function StoreGrid() {
               onKeyDown={(e) => { if (e.key === "Enter") router.push(`/stores/${s.slug}`); }}
               className="rounded-2xl border p-3 shadow-soft block cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand/40"
             >
-              {/* banner tipis (pakai bg image kalau ada) */}
-              <div className="w-full h-14 rounded-xl bg-gradient-to-b from-gray-100 to-gray-200 mb-2 overflow-hidden">
+              {/* banner promo di atas card */}
+              <div className="w-full h-20 sm:h-24 rounded-xl bg-gradient-to-b from-gray-100 to-gray-200 mb-2 overflow-hidden">
                 {s.image_url ? (
-                  <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${s.image_url})` }} />
+                  <div
+                    className="w-full h-full bg-cover bg-center"
+                    style={{ backgroundImage: `url(${s.image_url})` }}
+                  />
                 ) : null}
               </div>
 
