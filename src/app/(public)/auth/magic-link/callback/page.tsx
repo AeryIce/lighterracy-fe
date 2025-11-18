@@ -1,174 +1,235 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getBackendUrl } from "@/lib/env";
 
-type VerifyState = "idle" | "verifying" | "success" | "error";
+type Status = "idle" | "verifying" | "success" | "error";
 
-interface VerifyResponseUser {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  store_id: number | null;
-}
-
-interface VerifyResponseSession {
-  id: number;
-  device_id: string | null;
-  last_seen: string;
-  created_at: string;
-}
-
-interface VerifyResponse {
+interface VerifySuccessResponse {
   message: string;
   token: string;
-  user: VerifyResponseUser;
-  session: VerifyResponseSession;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    store_id: number | null;
+  };
+  session: {
+    id: number;
+    device_id: string | null;
+    last_seen: string;
+    created_at: string;
+  };
 }
 
-interface ErrorResponse {
-  message?: string;
-}
+const SESSION_TOKEN_KEY = "lighterracy_session_token";
+const DEVICE_ID_KEY = "lighterracy_device_id";
 
-function getOrCreateDeviceId(): string {
-  if (typeof window === "undefined") {
-    return "unknown-device";
-  }
-
-  const storageKey = "lighterracy_device_id";
-  const existing = window.localStorage.getItem(storageKey);
-  if (existing && existing.length > 0) {
-    return existing;
-  }
-
-  const newId =
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `device-${Math.random().toString(36).slice(2, 18)}`;
-
-  window.localStorage.setItem(storageKey, newId);
-  return newId;
-}
-
-function saveSessionToken(token: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem("lighterracy_session_token", token);
-}
-
-export default function MagicLinkCallbackPage() {
+function MagicLinkCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const [state, setState] = useState<VerifyState>("idle");
+
+  const [status, setStatus] = useState<Status>("idle");
+  const [message, setMessage] = useState<string>(
+    "Memproses magic link, mohon tunggu sebentar...",
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      setState("error");
-      setError("Token login tidak ditemukan. Silakan minta magic link baru.");
-      return;
-    }
+    let cancelled = false;
 
-    async function verify() {
-      setState("verifying");
-      setError(null);
+    const tokenFromUrl = searchParams.get("token");
+
+    async function runVerification() {
+      if (!tokenFromUrl) {
+        if (cancelled) return;
+
+        setStatus("error");
+        setMessage("Gagal memproses magic link.");
+        setError("Token login tidak ditemukan di URL.");
+        return;
+      }
+
+      if (cancelled) return;
+
+      setStatus("verifying");
+      setMessage("Memverifikasi magic link ke server...");
+
+      const backendUrl = getBackendUrl();
+
+      let deviceId: string | undefined;
+
+      if (typeof window !== "undefined") {
+        const existing = window.localStorage.getItem(DEVICE_ID_KEY);
+
+        if (existing && existing.length > 0) {
+          deviceId = existing;
+        } else {
+          const newId = `dev-${Math.random().toString(36).slice(2, 10)}`;
+          window.localStorage.setItem(DEVICE_ID_KEY, newId);
+          deviceId = newId;
+        }
+      }
 
       try {
-        const backendUrl = getBackendUrl();
-        const deviceId = getOrCreateDeviceId();
-
         const response = await fetch(`${backendUrl}/api/auth/magic-link/verify`, {
           method: "POST",
           headers: {
+            Accept: "application/json",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            token,
+            token: tokenFromUrl,
             device_id: deviceId,
           }),
         });
 
-        const data = (await response.json()) as VerifyResponse | ErrorResponse;
+        if (cancelled) return;
 
         if (!response.ok) {
-          const message =
-            "message" in data && data.message ? data.message : "Gagal memverifikasi magic link.";
-          setState("error");
-          setError(message);
+          const data: unknown = await response.json().catch(() => null as unknown);
+
+          let errorMessage = "Gagal memverifikasi magic link.";
+
+          if (
+            data &&
+            typeof data === "object" &&
+            "message" in data &&
+            typeof (data as { message: unknown }).message === "string"
+          ) {
+            errorMessage = (data as { message: string }).message;
+          }
+
+          setStatus("error");
+          setMessage("Gagal memproses magic link.");
+          setError(errorMessage);
           return;
         }
 
-        const okData = data as VerifyResponse;
+        const data = (await response.json()) as VerifySuccessResponse;
 
-        saveSessionToken(okData.token);
-        setState("success");
-
-        let targetPath = "/";
-
-        if (okData.user.role === "staff") {
-          targetPath = "/staff";
-        } else if (okData.user.role === "admin") {
-          targetPath = "/admin";
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(SESSION_TOKEN_KEY, data.token);
         }
 
+        if (cancelled) return;
+
+        const role = data.user.role;
+
+        setStatus("success");
+        setMessage("Login berhasil. Mengarahkan ke halaman yang sesuai...");
+
         window.setTimeout(() => {
-          router.push(targetPath);
+          if (cancelled) return;
+
+          if (role === "staff") {
+            router.replace("/staff");
+          } else if (role === "admin") {
+            router.replace("/admin");
+          } else {
+            router.replace("/");
+          }
         }, 800);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error(err);
-        setState("error");
-        setError("Terjadi kesalahan saat menghubungi server.");
+      } catch {
+        if (cancelled) return;
+
+        setStatus("error");
+        setMessage("Gagal memproses magic link.");
+        setError("Terjadi kesalahan jaringan saat menghubungi server.");
       }
     }
 
-    void verify();
-  }, [router, token]);
+    void runVerification();
 
-  const isLoading = state === "verifying" || state === "idle";
+    return () => {
+      cancelled = true;
+    };
+  }, [router, searchParams]);
+
+  const isVerifying = status === "idle" || status === "verifying";
 
   return (
-    <main className="min-h-dvh bg-[#f7f7f7] flex items-center justify-center px-4 py-10">
+    <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
       <Card className="w-full max-w-md shadow-lg border border-zinc-200">
         <CardHeader>
-          <CardTitle className="text-xl font-semibold">Memverifikasi Magic Link</CardTitle>
+          <CardTitle className="text-xl font-semibold">
+            Memproses Magic Link
+          </CardTitle>
           <CardDescription>
-            Mohon tunggu sebentar, kami sedang memverifikasi tautan login Anda.
+            Lightcy sedang memverifikasi tautan login kamu. Jangan tutup halaman ini.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isLoading && (
-            <p className="text-sm text-zinc-700">Menghubungkan ke server dan memverifikasi sesi...</p>
-          )}
+          <p className="text-sm text-zinc-800">{message}</p>
 
-          {state === "success" && (
-            <p className="text-sm text-emerald-700">
-              Login berhasil. Anda akan diarahkan ke halaman yang sesuai.
+          {isVerifying && (
+            <p className="text-xs text-zinc-500">
+              Jika proses terlalu lama, kamu dapat menutup tab ini dan meminta magic
+              link baru dari halaman login.
             </p>
           )}
 
-          {state === "error" && error && (
+          {status === "error" && error && (
             <div className="space-y-2">
               <p className="text-sm text-red-600">{error}</p>
               <Button
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => router.push("/staff/login")}
+                onClick={() => {
+                  router.push("/staff/login");
+                }}
               >
                 Kembali ke halaman login staff
               </Button>
             </div>
           )}
+
+          {status === "success" && (
+            <p className="text-xs text-emerald-700">
+              Login berhasil. Kamu akan diarahkan secara otomatis...
+            </p>
+          )}
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+export default function MagicLinkCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
+          <Card className="w-full max-w-md shadow-lg border border-zinc-200">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold">
+                Memproses Magic Link
+              </CardTitle>
+              <CardDescription>
+                Lightcy sedang menyiapkan halaman login kamu...
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-zinc-800">
+                Memuat parameter dari URL dan menyiapkan verifikasi magic link...
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      }
+    >
+      <MagicLinkCallbackContent />
+    </Suspense>
   );
 }
