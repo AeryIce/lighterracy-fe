@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getBackendUrl } from "@/lib/env";
 
 /** Dimensi dari Google Books (bisa string "8 inches", "20 cm", dll) */
 export type Dim =
@@ -29,6 +30,12 @@ export type BookFull = {
     medium?: string;
     large?: string;
   } | null;
+};
+
+type LightcyChatBookResponse = {
+  mode: string;
+  isbn: string;
+  answer: string;
 };
 
 type Props = {
@@ -69,7 +76,9 @@ function sanitizeHtml(raw = ""): string {
 function toCm(dim?: Dim): string {
   if (!dim) return "—";
   const take = (v?: string) => (v || "").trim();
-  const H = take(dim.height), W = take(dim.width), T = take(dim.thickness);
+  const H = take(dim.height),
+    W = take(dim.width),
+    T = take(dim.thickness);
 
   const parseOne = (val: string) => {
     if (!val) return null;
@@ -82,7 +91,9 @@ function toCm(dim?: Dim): string {
     return Math.round(cm * 10) / 10;
   };
 
-  const h = parseOne(H), w = parseOne(W), t = parseOne(T);
+  const h = parseOne(H),
+    w = parseOne(W),
+    t = parseOne(T);
   const parts: string[] = [];
   if (w != null) parts.push(`${w}cm`);
   if (h != null) parts.push(`${h}cm`);
@@ -95,16 +106,26 @@ export default function BookDetailModal({ open, onOpenChange, book }: Props) {
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<number | null>(null);
 
+  const [lightcyAnswer, setLightcyAnswer] = useState<string | null>(null);
+  const [lightcyLoading, setLightcyLoading] = useState(false);
+  const [lightcyError, setLightcyError] = useState<string | null>(null);
+
   // Lock background scroll saat modal terbuka
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
-  // reset expand saat ganti buku
-  useEffect(() => { setExpanded(false); }, [book?.isbn13, book?.title]);
+  // reset expand & state Lightcy saat ganti buku
+  useEffect(() => {
+    setExpanded(false);
+    setLightcyAnswer(null);
+    setLightcyError(null);
+  }, [book?.isbn13, book?.title]);
 
   // ===== Derived values (aman sebelum early-return) =====
   const cover =
@@ -154,10 +175,52 @@ export default function BookDetailModal({ open, onOpenChange, book }: Props) {
     }
   }
 
+  async function handleAskLightcy() {
+    if (!book?.isbn13) {
+      setLightcyError("ISBN untuk buku ini belum tersedia.");
+      setLightcyAnswer(null);
+      return;
+    }
+
+    try {
+      setLightcyLoading(true);
+      setLightcyError(null);
+
+      const backend = getBackendUrl();
+      const res = await fetch(`${backend}/api/lightcy/chat/book`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isbn: book.isbn13,
+          question:
+            "Ringkas untukku isi utama buku ini dalam bahasa Indonesia.",
+        }),
+      });
+
+      if (!res.ok) {
+        setLightcyError(`Lightcy belum bisa jawab (status ${res.status}).`);
+        setLightcyAnswer(null);
+        return;
+      }
+
+      const data = (await res.json()) as LightcyChatBookResponse;
+      setLightcyAnswer(data.answer);
+    } catch {
+      setLightcyError("Lightcy lagi kesulitan menjawab. Coba lagi sebentar ya.");
+      setLightcyAnswer(null);
+    } finally {
+      setLightcyLoading(false);
+    }
+  }
+
   // ESC untuk tutup
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -211,12 +274,25 @@ export default function BookDetailModal({ open, onOpenChange, book }: Props) {
 
                 {/* meta ringkas */}
                 <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                  <div><span className="text-neutral-500">Publisher:</span> {publisher}</div>
-                  <div><span className="text-neutral-500">Published:</span> {published}</div>
-                  <div><span className="text-neutral-500">ISBN-13:</span> {book.isbn13 || "—"}</div>
-                  <div><span className="text-neutral-500">Pages:</span> {pages ?? "—"}</div>
+                  <div>
+                    <span className="text-neutral-500">Publisher:</span>{" "}
+                    {publisher}
+                  </div>
+                  <div>
+                    <span className="text-neutral-500">Published:</span>{" "}
+                    {published}
+                  </div>
+                  <div>
+                    <span className="text-neutral-500">ISBN-13:</span>{" "}
+                    {book.isbn13 || "—"}
+                  </div>
+                  <div>
+                    <span className="text-neutral-500">Pages:</span>{" "}
+                    {pages ?? "—"}
+                  </div>
                   <div className="col-span-2">
-                    <span className="text-neutral-500">Dimensions:</span> {toCm(book.dimensions)}
+                    <span className="text-neutral-500">Dimensions:</span>{" "}
+                    {toCm(book.dimensions)}
                   </div>
                 </div>
 
@@ -242,7 +318,7 @@ export default function BookDetailModal({ open, onOpenChange, book }: Props) {
                 <div
                   className={[
                     "text-sm leading-relaxed text-neutral-800 pr-1",
-                    expanded ? "" : "max-h-[30vh] overflow-hidden"
+                    expanded ? "" : "max-h-[30vh] overflow-hidden",
                   ].join(" ")}
                   dangerouslySetInnerHTML={{ __html: safeDescHtml }}
                 />
@@ -257,6 +333,19 @@ export default function BookDetailModal({ open, onOpenChange, book }: Props) {
                 ) : null}
               </div>
             ) : null}
+
+            {lightcyError ? (
+              <p className="mt-3 text-sm text-red-500">{lightcyError}</p>
+            ) : null}
+
+            {lightcyAnswer ? (
+              <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                <div className="mb-1 font-semibold text-emerald-800">
+                  Lightcy (demo) · Ringkasan
+                </div>
+                <p className="whitespace-pre-line">{lightcyAnswer}</p>
+              </div>
+            ) : null}
           </div>
 
           {/* footer sticky */}
@@ -266,12 +355,22 @@ export default function BookDetailModal({ open, onOpenChange, book }: Props) {
                 type="button"
                 className={[
                   "px-3 py-2 rounded-lg bg-neutral-100 text-sm transition-transform",
-                  copied ? "scale-[0.98]" : ""
+                  copied ? "scale-[0.98]" : "",
                 ].join(" ")}
                 onClick={handleCopy}
                 aria-live="polite"
               >
                 {copied ? "Tersalin ✓" : "Copy ISBN"}
+              </button>
+            ) : null}
+            {book.isbn13 ? (
+              <button
+                type="button"
+                className="px-3 py-2 rounded-lg bg-emerald-100 text-emerald-800 text-sm disabled:opacity-60"
+                onClick={handleAskLightcy}
+                disabled={lightcyLoading}
+              >
+                {lightcyLoading ? "Lightcy berpikir..." : "Tanya Lightcy (demo)"}
               </button>
             ) : null}
             <button
