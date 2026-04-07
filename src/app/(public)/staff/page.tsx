@@ -120,9 +120,9 @@ function SecurityShieldIcon() {
         <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z" />
         <path d="m9.5 12 1.7 1.7 3.8-4.2" />
       </svg>
-      <div className="absolute -right-1 -top-1 rounded-full bg-emerald-400 px-1.5 py-0.5 text-[10px] font-semibold text-black shadow">
-        secure
-      </div>
+      <div className="absolute -right-1 -top-1 rounded-full bg-[#fda50f] px-1.5 py-0.5 text-[10px] font-semibold text-[#111111] shadow">
+  secure
+</div>
     </div>
   );
 }
@@ -150,10 +150,10 @@ function SecurityBlockedCard({
   onHome,
   onLogout,
 }: SecurityBlockedCardProps) {
-  const accentClass =
-    variant === "forbidden"
-      ? "from-[#171717] via-[#111827] to-[#1f2937]"
-      : "from-[#2b0b0b] via-[#451313] to-[#6b1f1f]";
+ const accentClass =
+  variant === "forbidden"
+    ? "from-[#0e2a47] via-[#163a5f] to-[#1f4f7a]"
+    : "from-[#fda50f] via-[#f28c18] to-[#0e2a47]";
 
   const badgeText =
     variant === "forbidden"
@@ -173,18 +173,18 @@ function SecurityBlockedCard({
               </p>
               <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{title}</h1>
               <p className="mt-2 text-sm leading-6 text-white/80">{description}</p>
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] text-white/85 backdrop-blur">
-                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-                <span>{badgeText}</span>
-              </div>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] text-white/90 backdrop-blur">
+  <span className="inline-block h-2 w-2 rounded-full bg-[#fda50f]" />
+  <span>{badgeText}</span>
+</div>
             </div>
 
             <SecurityShieldIcon />
           </div>
         </div>
 
-        <Card className="overflow-hidden border-zinc-200 shadow-sm">
-          <CardHeader className="bg-[#fff9f3]">
+        <Card className="overflow-hidden border-[#eadfce] shadow-sm">
+  <CardHeader className="bg-[#fff7eb]">
             <CardTitle className="text-base">Access policy</CardTitle>
             <CardDescription className="text-xs leading-5">
               Route ini dilindungi oleh kebijakan akses yang disejajarkan dengan prinsip
@@ -227,7 +227,11 @@ function SecurityBlockedCard({
             )}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Button type="button" className="w-full" onClick={onLogin}>
+              <Button
+  type="button"
+  className="w-full bg-[#0e2a47] text-white hover:bg-[#163a5f]"
+  onClick={onLogin}
+>
                 Kembali ke login staff
               </Button>
               <Button type="button" variant="outline" className="w-full" onClick={onHome}>
