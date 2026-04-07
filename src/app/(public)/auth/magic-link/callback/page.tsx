@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getBackendUrl } from "@/lib/env";
+import { setSessionTokenInBrowser } from "@/lib/auth-client";
 
 type Status = "idle" | "verifying" | "success" | "error";
 
@@ -32,8 +33,21 @@ interface VerifySuccessResponse {
   };
 }
 
-const SESSION_TOKEN_KEY = "lighterracy_session_token";
 const DEVICE_ID_KEY = "lighterracy_device_id";
+const STAFF_PANEL_ROLES = new Set([
+  "staff",
+  "store_staff",
+  "store_manager",
+  "area_manager",
+]);
+const INTERNAL_PORTAL_ROLES = new Set([
+  "admin",
+  "superadmin",
+  "ppic",
+  "si",
+  "ecomm_staff",
+  "ecomm_head",
+]);
 
 function MagicLinkCallbackContent() {
   const router = useRouter();
@@ -117,28 +131,33 @@ function MagicLinkCallbackContent() {
         }
 
         const data = (await response.json()) as VerifySuccessResponse;
-
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(SESSION_TOKEN_KEY, data.token);
-        }
+        setSessionTokenInBrowser(data.token);
 
         if (cancelled) return;
 
         const role = data.user.role;
 
         setStatus("success");
-        setMessage("Login berhasil. Mengarahkan ke halaman yang sesuai...");
+
+        if (STAFF_PANEL_ROLES.has(role)) {
+          setMessage("Login berhasil. Mengarahkan ke staff panel...");
+        } else if (INTERNAL_PORTAL_ROLES.has(role)) {
+          setMessage(
+            "Akun internal berhasil diverifikasi. Untuk area kerja internal, gunakan portal internal/backend.",
+          );
+        } else {
+          setMessage("Login berhasil. Mengarahkan ke beranda Lighterracy...");
+        }
 
         window.setTimeout(() => {
           if (cancelled) return;
 
-          if (role === "staff") {
+          if (STAFF_PANEL_ROLES.has(role)) {
             router.replace("/staff");
-          } else if (role === "admin") {
-            router.replace("/admin");
-          } else {
-            router.replace("/");
+            return;
           }
+
+          router.replace("/");
         }, 800);
       } catch {
         if (cancelled) return;
@@ -160,7 +179,7 @@ function MagicLinkCallbackContent() {
 
   return (
     <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
-      <Card className="w-full max-w-md shadow-lg border border-zinc-200">
+      <Card className="w-full max-w-md border border-zinc-200 shadow-lg">
         <CardHeader>
           <CardTitle className="text-xl font-semibold">
             Memproses Magic Link
@@ -211,7 +230,7 @@ export default function MagicLinkCallbackPage() {
     <Suspense
       fallback={
         <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
-          <Card className="w-full max-w-md shadow-lg border border-zinc-200">
+          <Card className="w-full max-w-md border border-zinc-200 shadow-lg">
             <CardHeader>
               <CardTitle className="text-xl font-semibold">
                 Memproses Magic Link

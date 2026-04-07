@@ -51,9 +51,7 @@ export default function StaffLoginPage() {
       setState("success");
       setSuccessMessage(data.message);
       setDebugLink(data.debug_link ?? null);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(err);
+    } catch {
       setState("error");
       setError("Terjadi kesalahan saat menghubungi server.");
     }
