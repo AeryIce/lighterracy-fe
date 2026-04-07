@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
@@ -34,12 +34,15 @@ interface VerifySuccessResponse {
 }
 
 const DEVICE_ID_KEY = "lighterracy_device_id";
+const AUTH_NEXT_STORAGE_KEY = "lighterracy_auth_next_path";
+
 const STAFF_PANEL_ROLES = new Set([
   "staff",
   "store_staff",
   "store_manager",
   "area_manager",
 ]);
+
 const INTERNAL_PORTAL_ROLES = new Set([
   "admin",
   "superadmin",
@@ -49,9 +52,63 @@ const INTERNAL_PORTAL_ROLES = new Set([
   "ecomm_head",
 ]);
 
+function normalizeNextPath(rawValue: string | null): string | null {
+  if (!rawValue) {
+    return null;
+  }
+
+  if (rawValue === "/staff" || rawValue.startsWith("/staff/")) {
+    return rawValue;
+  }
+
+  return null;
+}
+
+function readStoredNextPath(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return normalizeNextPath(window.localStorage.getItem(AUTH_NEXT_STORAGE_KEY));
+}
+
+function writeStoredNextPath(nextPath: string | null): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (nextPath) {
+    window.localStorage.setItem(AUTH_NEXT_STORAGE_KEY, nextPath);
+    return;
+  }
+
+  window.localStorage.removeItem(AUTH_NEXT_STORAGE_KEY);
+}
+
+function clearStoredNextPath(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(AUTH_NEXT_STORAGE_KEY);
+}
+
+function buildStaffLoginUrl(nextPath: string | null): string {
+  if (!nextPath) {
+    return "/staff/login";
+  }
+
+  return `/staff/login?next=${encodeURIComponent(nextPath)}`;
+}
+
 function MagicLinkCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const requestedNextFromUrl = useMemo(
+    () => normalizeNextPath(searchParams.get("next")),
+    [searchParams],
+  );
 
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string>(
@@ -63,10 +120,17 @@ function MagicLinkCallbackContent() {
     let cancelled = false;
 
     const tokenFromUrl = searchParams.get("token");
+    const requestedNextPath = requestedNextFromUrl ?? readStoredNextPath();
+
+    if (requestedNextFromUrl) {
+      writeStoredNextPath(requestedNextFromUrl);
+    }
 
     async function runVerification() {
       if (!tokenFromUrl) {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         setStatus("error");
         setMessage("Gagal memproses magic link.");
@@ -74,7 +138,9 @@ function MagicLinkCallbackContent() {
         return;
       }
 
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
 
       setStatus("verifying");
       setMessage("Memverifikasi magic link ke server...");
@@ -108,7 +174,9 @@ function MagicLinkCallbackContent() {
           }),
         });
 
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         if (!response.ok) {
           const data: unknown = await response.json().catch(() => null as unknown);
@@ -133,15 +201,19 @@ function MagicLinkCallbackContent() {
         const data = (await response.json()) as VerifySuccessResponse;
         setSessionTokenInBrowser(data.token);
 
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         const role = data.user.role;
+        const isStaffLike = STAFF_PANEL_ROLES.has(role);
+        const isInternalRole = INTERNAL_PORTAL_ROLES.has(role);
 
         setStatus("success");
 
-        if (STAFF_PANEL_ROLES.has(role)) {
-          setMessage("Login berhasil. Mengarahkan ke staff panel...");
-        } else if (INTERNAL_PORTAL_ROLES.has(role)) {
+        if (isStaffLike) {
+          setMessage("Login berhasil. Mengarahkan kamu kembali ke halaman staff...");
+        } else if (isInternalRole) {
           setMessage(
             "Akun internal berhasil diverifikasi. Untuk area kerja internal, gunakan portal internal/backend.",
           );
@@ -149,18 +221,22 @@ function MagicLinkCallbackContent() {
           setMessage("Login berhasil. Mengarahkan ke beranda Lighterracy...");
         }
 
-        window.setTimeout(() => {
-          if (cancelled) return;
+        const redirectTarget = isStaffLike
+          ? requestedNextPath ?? "/staff"
+          : "/";
 
-          if (STAFF_PANEL_ROLES.has(role)) {
-            router.replace("/staff");
+        window.setTimeout(() => {
+          if (cancelled) {
             return;
           }
 
-          router.replace("/");
+          clearStoredNextPath();
+          router.replace(redirectTarget);
         }, 800);
       } catch {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         setStatus("error");
         setMessage("Gagal memproses magic link.");
@@ -173,8 +249,9 @@ function MagicLinkCallbackContent() {
     return () => {
       cancelled = true;
     };
-  }, [router, searchParams]);
+  }, [requestedNextFromUrl, router, searchParams]);
 
+  const requestedNextPath = requestedNextFromUrl ?? readStoredNextPath();
   const isVerifying = status === "idle" || status === "verifying";
 
   return (
@@ -189,6 +266,15 @@ function MagicLinkCallbackContent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {requestedNextPath && (
+            <div className="rounded-md border border-dashed border-amber-300 bg-amber-50 px-3 py-2">
+              <p className="text-xs text-amber-900">
+                Target setelah login:{" "}
+                <span className="font-mono font-semibold">{requestedNextPath}</span>
+              </p>
+            </div>
+          )}
+
           <p className="text-sm text-zinc-800">{message}</p>
 
           {isVerifying && (
@@ -206,7 +292,7 @@ function MagicLinkCallbackContent() {
                 variant="outline"
                 className="w-full"
                 onClick={() => {
-                  router.push("/staff/login");
+                  router.push(buildStaffLoginUrl(requestedNextPath));
                 }}
               >
                 Kembali ke halaman login staff

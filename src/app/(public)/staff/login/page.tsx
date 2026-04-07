@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,61 @@ interface MagicLinkResponse {
   debug_link?: string | null;
 }
 
-export default function StaffLoginPage() {
+const AUTH_NEXT_STORAGE_KEY = "lighterracy_auth_next_path";
+
+function normalizeNextPath(rawValue: string | null): string | null {
+  if (!rawValue) {
+    return null;
+  }
+
+  if (rawValue === "/staff" || rawValue.startsWith("/staff/")) {
+    return rawValue;
+  }
+
+  return null;
+}
+
+function persistNextPath(nextPath: string | null): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (nextPath) {
+    window.localStorage.setItem(AUTH_NEXT_STORAGE_KEY, nextPath);
+    return;
+  }
+
+  window.localStorage.removeItem(AUTH_NEXT_STORAGE_KEY);
+}
+
+function appendNextToDebugLink(debugLink: string | null | undefined, nextPath: string | null): string | null {
+  if (!debugLink) {
+    return null;
+  }
+
+  if (!nextPath) {
+    return debugLink;
+  }
+
+  try {
+    const url = new URL(debugLink);
+    url.searchParams.set("next", nextPath);
+    return url.toString();
+  } catch {
+    const separator = debugLink.includes("?") ? "&" : "?";
+    return `${debugLink}${separator}next=${encodeURIComponent(nextPath)}`;
+  }
+}
+
+function StaffLoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const requestedNextPath = useMemo(
+    () => normalizeNextPath(searchParams.get("next")),
+    [searchParams],
+  );
+
   const [email, setEmail] = useState<string>("staff@lighterracy.test");
   const [state, setState] = useState<RequestState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +81,8 @@ export default function StaffLoginPage() {
     setError(null);
     setSuccessMessage(null);
     setDebugLink(null);
+
+    persistNextPath(requestedNextPath);
 
     try {
       const backendUrl = getBackendUrl();
@@ -50,7 +105,7 @@ export default function StaffLoginPage() {
 
       setState("success");
       setSuccessMessage(data.message);
-      setDebugLink(data.debug_link ?? null);
+      setDebugLink(appendNextToDebugLink(data.debug_link ?? null, requestedNextPath));
     } catch {
       setState("error");
       setError("Terjadi kesalahan saat menghubungi server.");
@@ -60,8 +115,8 @@ export default function StaffLoginPage() {
   const isLoading = state === "loading";
 
   return (
-    <main className="min-h-dvh bg-[#f7f7f7] flex items-center justify-center px-4 py-10">
-      <Card className="w-full max-w-md shadow-lg border border-zinc-200">
+    <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
+      <Card className="w-full max-w-md border border-zinc-200 shadow-lg">
         <CardHeader>
           <CardTitle className="text-xl font-semibold">Staff Login</CardTitle>
           <CardDescription>
@@ -70,6 +125,15 @@ export default function StaffLoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {requestedNextPath && (
+              <div className="rounded-md border border-dashed border-amber-300 bg-amber-50 px-3 py-2">
+                <p className="text-xs text-amber-900">
+                  Setelah login berhasil, kamu akan diarahkan kembali ke{" "}
+                  <span className="font-mono font-semibold">{requestedNextPath}</span>.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-zinc-800">
                 Email Staff
@@ -116,7 +180,7 @@ export default function StaffLoginPage() {
 
             <button
               type="button"
-              className="mt-4 w-full text-xs text-zinc-500 hover:text-zinc-800 underline underline-offset-4"
+              className="mt-4 w-full text-xs text-zinc-500 underline underline-offset-4 hover:text-zinc-800"
               onClick={() => router.push("/")}
             >
               &larr; Kembali ke beranda
@@ -125,5 +189,31 @@ export default function StaffLoginPage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+export default function StaffLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
+          <Card className="w-full max-w-md border border-zinc-200 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold">Staff Login</CardTitle>
+              <CardDescription>
+                Menyiapkan jalur login staff...
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-zinc-800">
+                Memuat konteks route yang ingin kamu buka...
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      }
+    >
+      <StaffLoginPageContent />
+    </Suspense>
   );
 }
