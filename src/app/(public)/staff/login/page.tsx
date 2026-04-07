@@ -1,13 +1,19 @@
 "use client";
 
-import { FormEvent, Suspense, useMemo, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { fetchAuthMe } from "@/lib/auth-client";
 import { getBackendUrl } from "@/lib/env";
 
-type RequestState = "idle" | "loading" | "success" | "error";
+type RequestState =
+  | "checking_session"
+  | "idle"
+  | "loading"
+  | "success"
+  | "error";
 
 interface MagicLinkResponse {
   message: string;
@@ -15,6 +21,13 @@ interface MagicLinkResponse {
 }
 
 const AUTH_NEXT_STORAGE_KEY = "lighterracy_auth_next_path";
+
+const STAFF_PANEL_ROLES = new Set([
+  "staff",
+  "store_staff",
+  "store_manager",
+  "area_manager",
+]);
 
 function normalizeNextPath(rawValue: string | null): string | null {
   if (!rawValue) {
@@ -41,7 +54,10 @@ function persistNextPath(nextPath: string | null): void {
   window.localStorage.removeItem(AUTH_NEXT_STORAGE_KEY);
 }
 
-function appendNextToDebugLink(debugLink: string | null | undefined, nextPath: string | null): string | null {
+function appendNextToDebugLink(
+  debugLink: string | null | undefined,
+  nextPath: string | null,
+): string | null {
   if (!debugLink) {
     return null;
   }
@@ -70,10 +86,51 @@ function StaffLoginPageContent() {
   );
 
   const [email, setEmail] = useState<string>("staff@lighterracy.test");
-  const [state, setState] = useState<RequestState>("idle");
+  const [state, setState] = useState<RequestState>("checking_session");
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [debugLink, setDebugLink] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkExistingSession() {
+      persistNextPath(requestedNextPath);
+
+      try {
+        const payload = await fetchAuthMe();
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!payload?.user) {
+          setState("idle");
+          return;
+        }
+
+        if (STAFF_PANEL_ROLES.has(payload.user.role)) {
+          const redirectTarget = requestedNextPath ?? "/staff";
+          router.replace(redirectTarget);
+          return;
+        }
+
+        router.replace("/");
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setState("idle");
+      }
+    }
+
+    void checkExistingSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [requestedNextPath, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -112,7 +169,37 @@ function StaffLoginPageContent() {
     }
   }
 
+  const isCheckingSession = state === "checking_session";
   const isLoading = state === "loading";
+
+  if (isCheckingSession) {
+    return (
+      <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
+        <Card className="w-full max-w-md border border-zinc-200 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">Staff Login</CardTitle>
+            <CardDescription>
+              Mengecek session aktif terlebih dahulu...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-zinc-700">
+              Kalau kamu masih login dan session backend masih aktif, kamu akan langsung diarahkan
+              ke staff panel.
+            </p>
+            {requestedNextPath && (
+              <div className="rounded-md border border-dashed border-amber-300 bg-amber-50 px-3 py-2">
+                <p className="text-xs text-amber-900">
+                  Target setelah lolos pengecekan:{" "}
+                  <span className="font-mono font-semibold">{requestedNextPath}</span>
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
@@ -160,11 +247,7 @@ function StaffLoginPageContent() {
 
             {successMessage && <p className="mt-2 text-sm text-emerald-700">{successMessage}</p>}
 
-            {error && (
-              <p className="mt-2 text-sm text-red-600">
-                {error}
-              </p>
-            )}
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
             {debugLink && (
               <div className="mt-4 space-y-1 rounded-md border border-dashed border-zinc-300 bg-zinc-50 px-3 py-2">
