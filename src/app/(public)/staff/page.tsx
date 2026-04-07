@@ -104,6 +104,155 @@ function formatDateTime(value: string | null | undefined): string {
   });
 }
 
+function SecurityShieldIcon() {
+  return (
+    <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-lg backdrop-blur">
+      <svg
+        viewBox="0 0 24 24"
+        className="h-8 w-8 text-white"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z" />
+        <path d="m9.5 12 1.7 1.7 3.8-4.2" />
+      </svg>
+      <div className="absolute -right-1 -top-1 rounded-full bg-emerald-400 px-1.5 py-0.5 text-[10px] font-semibold text-black shadow">
+        secure
+      </div>
+    </div>
+  );
+}
+
+interface SecurityBlockedCardProps {
+  variant: "expired" | "forbidden";
+  title: string;
+  description: string;
+  detail?: string | null;
+  user?: AuthMeUser | null;
+  isLoggingOut?: boolean;
+  onLogin: () => void;
+  onHome: () => void;
+  onLogout?: () => void;
+}
+
+function SecurityBlockedCard({
+  variant,
+  title,
+  description,
+  detail,
+  user,
+  isLoggingOut = false,
+  onLogin,
+  onHome,
+  onLogout,
+}: SecurityBlockedCardProps) {
+  const accentClass =
+    variant === "forbidden"
+      ? "from-[#171717] via-[#111827] to-[#1f2937]"
+      : "from-[#2b0b0b] via-[#451313] to-[#6b1f1f]";
+
+  const badgeText =
+    variant === "forbidden"
+      ? "Protected Staff Realm"
+      : "Session Protection Active";
+
+  return (
+    <main className="min-h-dvh bg-[#f7f7f7] px-4 py-8">
+      <section className="mx-auto flex max-w-2xl flex-col gap-4">
+        <div
+          className={`overflow-hidden rounded-3xl bg-gradient-to-r ${accentClass} text-white shadow-2xl`}
+        >
+          <div className="flex flex-col gap-6 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <div className="max-w-xl">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/65">
+                Staff route security gate
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{title}</h1>
+              <p className="mt-2 text-sm leading-6 text-white/80">{description}</p>
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] text-white/85 backdrop-blur">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+                <span>{badgeText}</span>
+              </div>
+            </div>
+
+            <SecurityShieldIcon />
+          </div>
+        </div>
+
+        <Card className="overflow-hidden border-zinc-200 shadow-sm">
+          <CardHeader className="bg-[#fff9f3]">
+            <CardTitle className="text-base">Access policy</CardTitle>
+            <CardDescription className="text-xs leading-5">
+              Route ini dilindungi oleh kebijakan akses yang disejajarkan dengan prinsip
+              OWASP ASVS, sehingga sesi tidak valid atau role yang tidak sesuai akan
+              ditolak otomatis oleh flow keamanan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-5">
+            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Security detail
+              </p>
+              <p className="mt-2 text-sm text-zinc-800">
+                {detail ??
+                  "Akses ke halaman staff membutuhkan sesi aktif dan role yang sesuai dengan kontrak backend."}
+              </p>
+            </div>
+
+            {user && (
+              <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Session snapshot
+                </p>
+                <div className="space-y-1 text-zinc-800">
+                  <p>
+                    <span className="font-medium">Nama:</span> {user.name}
+                  </p>
+                  <p>
+                    <span className="font-medium">Email:</span> {user.email}
+                  </p>
+                  <p>
+                    <span className="font-medium">Role:</span> {user.role}
+                  </p>
+                  <p>
+                    <span className="font-medium">store_id:</span>{" "}
+                    {user.store_id ?? "-"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Button type="button" className="w-full" onClick={onLogin}>
+                Kembali ke login staff
+              </Button>
+              <Button type="button" variant="outline" className="w-full" onClick={onHome}>
+                Ke beranda publik
+              </Button>
+            </div>
+
+            {onLogout && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-zinc-600 hover:text-zinc-900"
+                onClick={onLogout}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? "Logging out..." : "Logout dari sesi ini"}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    </main>
+  );
+}
+
 export default function StaffHomePage() {
   const router = useRouter();
 
@@ -233,91 +382,35 @@ export default function StaffHomePage() {
 
   if (state === "error") {
     return (
-      <main className="min-h-dvh bg-[#f7f7f7] px-4 py-8">
-        <section className="mx-auto flex max-w-md flex-col gap-4">
-          <Card className="border-red-100 bg-red-50">
-            <CardHeader>
-              <CardTitle className="text-base">Sesi login berakhir</CardTitle>
-              <CardDescription className="text-xs">
-                {error ??
-                  "Sesi login kamu sudah tidak valid atau tidak dapat dimuat. Silakan login ulang untuk melanjutkan."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Button
-                type="button"
-                className="w-full"
-                onClick={() => {
-                  clearSessionTokenFromBrowser();
-                  router.push("/staff/login");
-                }}
-              >
-                Kembali ke login staff
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => router.push("/")}
-              >
-                Ke beranda publik
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
-      </main>
+      <SecurityBlockedCard
+        variant="expired"
+        title="Sesi login berakhir"
+        description="Kamu mencoba membuka route staff yang dilindungi, tapi sesi aktif tidak ditemukan atau sudah kedaluwarsa."
+        detail={error}
+        onLogin={() => {
+          clearSessionTokenFromBrowser();
+          router.push("/staff/login");
+        }}
+        onHome={() => router.push("/")}
+      />
     );
   }
 
   if (state === "forbidden") {
     return (
-      <main className="min-h-dvh bg-[#f7f7f7] px-4 py-8">
-        <section className="mx-auto flex max-w-md flex-col gap-4">
-          <Card className="border-amber-200 bg-amber-50">
-            <CardHeader>
-              <CardTitle className="text-base">Akses staff panel ditolak</CardTitle>
-              <CardDescription className="text-xs">
-                {error ??
-                  "Akun ini berhasil login, tapi belum punya akses ke panel staff/store di Lighterracy FE."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {user && (
-                <div className="rounded-lg border border-amber-200 bg-white/70 p-3 text-xs text-zinc-700">
-                  <p>
-                    <span className="font-medium">Nama:</span> {user.name}
-                  </p>
-                  <p>
-                    <span className="font-medium">Email:</span> {user.email}
-                  </p>
-                  <p>
-                    <span className="font-medium">Role:</span> {user.role}
-                  </p>
-                </div>
-              )}
-
-              <Button
-                type="button"
-                className="w-full"
-                onClick={() => router.push("/")}
-              >
-                Kembali ke beranda publik
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  void handleLogout();
-                }}
-                disabled={isLoggingOut}
-              >
-                {isLoggingOut ? "Logging out..." : "Logout dari sesi ini"}
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
-      </main>
+      <SecurityBlockedCard
+        variant="forbidden"
+        title="Akses staff panel ditolak"
+        description="Akun ini berhasil login, tetapi role-nya tidak cocok untuk memasuki protected staff realm di Lighterracy FE."
+        detail={error}
+        user={user}
+        isLoggingOut={isLoggingOut}
+        onLogin={() => router.push("/staff/login")}
+        onHome={() => router.push("/")}
+        onLogout={() => {
+          void handleLogout();
+        }}
+      />
     );
   }
 
@@ -388,8 +481,9 @@ export default function StaffHomePage() {
 
         <div className="rounded-xl border border-dashed border-amber-200 bg-[#fff6ea] px-4 py-3 text-xs text-amber-900 shadow-sm">
           <p>
-            Panel ini sengaja dibuat jujur dulu: fokus ke identitas login, konteks akun, dan pintasan kerja ringan.
-            Insight toko yang lebih dalam menyusul setelah kontrak data store di backend dirapikan. 📚
+            Panel ini sengaja dibuat jujur dulu: fokus ke identitas login, konteks akun, dan
+            pintasan kerja ringan. Insight toko yang lebih dalam menyusul setelah kontrak data
+            store di backend dirapikan. 📚
           </p>
         </div>
 
@@ -412,8 +506,7 @@ export default function StaffHomePage() {
                 <span className="font-medium">Role:</span> {displayRole}
               </p>
               <p>
-                <span className="font-medium">Session state:</span>{" "}
-                {authPayload.auth.state}
+                <span className="font-medium">Session state:</span> {authPayload.auth.state}
               </p>
               <p>
                 <span className="font-medium">Device ID:</span>{" "}
@@ -431,8 +524,7 @@ export default function StaffHomePage() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p>
-                <span className="font-medium">store_id:</span>{" "}
-                {user.store_id ?? "-"}
+                <span className="font-medium">store_id:</span> {user.store_id ?? "-"}
               </p>
               <p>
                 <span className="font-medium">Session dibuat:</span>{" "}
