@@ -101,6 +101,171 @@ function buildStaffLoginUrl(nextPath: string | null): string {
   return `/staff/login?next=${encodeURIComponent(nextPath)}`;
 }
 
+function SecurityShieldIcon() {
+  return (
+    <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/20 bg-white/10 shadow-lg backdrop-blur">
+      <svg
+        viewBox="0 0 24 24"
+        className="h-8 w-8 text-white"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z" />
+        <path d="m9.5 12 1.7 1.7 3.8-4.2" />
+      </svg>
+      <div className="absolute -right-1 -top-1 rounded-full bg-[#fda50f] px-1.5 py-0.5 text-[10px] font-semibold text-[#111111] shadow">
+        secure
+      </div>
+    </div>
+  );
+}
+
+function LoadingDots() {
+  return (
+    <div className="inline-flex items-center gap-1">
+      <span className="h-2 w-2 animate-pulse rounded-full bg-[#fda50f]" />
+      <span className="h-2 w-2 animate-pulse rounded-full bg-[#fda50f] [animation-delay:150ms]" />
+      <span className="h-2 w-2 animate-pulse rounded-full bg-[#fda50f] [animation-delay:300ms]" />
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: Status }) {
+  if (status === "error") {
+    return (
+      <div className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] text-red-700">
+        <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+        <span>Verification failed</span>
+      </div>
+    );
+  }
+
+  if (status === "success") {
+    return (
+      <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] text-emerald-700">
+        <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+        <span>Verification success</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] text-white/90 backdrop-blur">
+      <span className="inline-block h-2 w-2 rounded-full bg-[#fda50f]" />
+      <span>Secure magic link verification</span>
+    </div>
+  );
+}
+
+interface StatusShellProps {
+  status: Status;
+  title: string;
+  subtitle: string;
+  message: string;
+  nextPath: string | null;
+  error: string | null;
+  onBackToLogin: () => void;
+}
+
+function StatusShell({
+  status,
+  title,
+  subtitle,
+  message,
+  nextPath,
+  error,
+  onBackToLogin,
+}: StatusShellProps) {
+  const isError = status === "error";
+  const heroClass = isError
+    ? "from-[#5c1616] via-[#7a1f1f] to-[#0e2a47]"
+    : "from-[#fda50f] via-[#f28c18] to-[#0e2a47]";
+
+  return (
+    <main className="min-h-dvh bg-[#f7f7f7] px-4 py-10">
+      <section className="mx-auto max-w-2xl space-y-4">
+        <div
+          className={`overflow-hidden rounded-3xl bg-gradient-to-r ${heroClass} text-white shadow-2xl`}
+        >
+          <div className="flex flex-col gap-6 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <div className="max-w-xl">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/65">
+                Lighterracy secure login flow
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{title}</h1>
+              <p className="mt-2 text-sm leading-6 text-white/80">{subtitle}</p>
+              <div className="mt-4">
+                <StatusBadge status={status} />
+              </div>
+            </div>
+
+            <SecurityShieldIcon />
+          </div>
+        </div>
+
+        <Card className="overflow-hidden border-[#eadfce] shadow-sm">
+          <CardHeader className="bg-[#fff7eb]">
+            <CardTitle className="text-base">Verification status</CardTitle>
+            <CardDescription className="text-xs leading-5">
+              Halaman ini mengurus verifikasi magic link dan pengalihan aman ke route yang sesuai.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-5">
+            {nextPath && (
+              <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-4 py-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
+                  Target route
+                </p>
+                <p className="mt-2 text-sm text-amber-900">
+                  Setelah verifikasi selesai, kamu akan diarahkan ke{" "}
+                  <span className="font-mono font-semibold">{nextPath}</span>.
+                </p>
+              </div>
+            )}
+
+            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Progress
+              </p>
+              <div className="mt-2 flex items-start gap-3">
+                {!isError && status !== "success" && <LoadingDots />}
+                <p className="text-sm text-zinc-800">{message}</p>
+              </div>
+            </div>
+
+            {status === "success" && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p className="text-sm text-emerald-700">
+                  Login berhasil. Kamu akan diarahkan secara otomatis...
+                </p>
+              </div>
+            )}
+
+            {isError && error && (
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+                <Button
+                  type="button"
+                  className="w-full bg-[#0e2a47] text-white hover:bg-[#163a5f]"
+                  onClick={onBackToLogin}
+                >
+                  Kembali ke halaman login staff
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    </main>
+  );
+}
+
 function MagicLinkCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -112,7 +277,7 @@ function MagicLinkCallbackContent() {
 
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string>(
-    "Memproses magic link, mohon tunggu sebentar...",
+    "Menyiapkan verifikasi magic link..."
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -143,7 +308,7 @@ function MagicLinkCallbackContent() {
       }
 
       setStatus("verifying");
-      setMessage("Memverifikasi magic link ke server...");
+      setMessage("Memverifikasi tautan login kamu secara aman...");
 
       const backendUrl = getBackendUrl();
 
@@ -232,7 +397,7 @@ function MagicLinkCallbackContent() {
 
           clearStoredNextPath();
           router.replace(redirectTarget);
-        }, 800);
+        }, 900);
       } catch {
         if (cancelled) {
           return;
@@ -252,62 +417,19 @@ function MagicLinkCallbackContent() {
   }, [requestedNextFromUrl, router, searchParams]);
 
   const requestedNextPath = requestedNextFromUrl ?? readStoredNextPath();
-  const isVerifying = status === "idle" || status === "verifying";
 
   return (
-    <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
-      <Card className="w-full max-w-md border border-zinc-200 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">
-            Memproses Magic Link
-          </CardTitle>
-          <CardDescription>
-            Lightcy sedang memverifikasi tautan login kamu. Jangan tutup halaman ini.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {requestedNextPath && (
-            <div className="rounded-md border border-dashed border-amber-300 bg-amber-50 px-3 py-2">
-              <p className="text-xs text-amber-900">
-                Target setelah login:{" "}
-                <span className="font-mono font-semibold">{requestedNextPath}</span>
-              </p>
-            </div>
-          )}
-
-          <p className="text-sm text-zinc-800">{message}</p>
-
-          {isVerifying && (
-            <p className="text-xs text-zinc-500">
-              Jika proses terlalu lama, kamu dapat menutup tab ini dan meminta magic
-              link baru dari halaman login.
-            </p>
-          )}
-
-          {status === "error" && error && (
-            <div className="space-y-2">
-              <p className="text-sm text-red-600">{error}</p>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  router.push(buildStaffLoginUrl(requestedNextPath));
-                }}
-              >
-                Kembali ke halaman login staff
-              </Button>
-            </div>
-          )}
-
-          {status === "success" && (
-            <p className="text-xs text-emerald-700">
-              Login berhasil. Kamu akan diarahkan secara otomatis...
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    </main>
+    <StatusShell
+      status={status}
+      title="Memproses Magic Link"
+      subtitle="Lightcy sedang memverifikasi tautan login kamu agar proses masuk tetap aman dan rapi."
+      message={message}
+      nextPath={requestedNextPath}
+      error={error}
+      onBackToLogin={() => {
+        router.push(buildStaffLoginUrl(requestedNextPath));
+      }}
+    />
   );
 }
 
@@ -315,23 +437,15 @@ export default function MagicLinkCallbackPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-dvh flex items-center justify-center bg-[#f7f7f7] px-4 py-10">
-          <Card className="w-full max-w-md border border-zinc-200 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold">
-                Memproses Magic Link
-              </CardTitle>
-              <CardDescription>
-                Lightcy sedang menyiapkan halaman login kamu...
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-zinc-800">
-                Memuat parameter dari URL dan menyiapkan verifikasi magic link...
-              </p>
-            </CardContent>
-          </Card>
-        </main>
+        <StatusShell
+          status="idle"
+          title="Memproses Magic Link"
+          subtitle="Lightcy sedang menyiapkan jalur login kamu."
+          message="Memuat parameter dari URL dan menyiapkan verifikasi magic link..."
+          nextPath={null}
+          error={null}
+          onBackToLogin={() => {}}
+        />
       }
     >
       <MagicLinkCallbackContent />
