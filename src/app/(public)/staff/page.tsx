@@ -448,8 +448,12 @@ export default function StaffHomePage() {
   });
 
   const displayRole = getRoleLabel(user.role || "staff");
-  const effectiveQuote = quote ?? DEFAULT_QUOTE;
+const effectiveQuote = quote ?? DEFAULT_QUOTE;
 
+const sessionState = authPayload.auth?.state ?? "AUTHORIZED";
+const sessionDeviceId = authPayload.session?.device_id ?? "-";
+const sessionCreatedAt = formatDateTime(authPayload.session?.created_at);
+const sessionLastSeen = formatDateTime(authPayload.session?.last_seen);
   return (
     <main className="min-h-dvh bg-[#f7f7f7] px-4 py-8">
       <section className="mx-auto max-w-screen-md space-y-6">
@@ -526,11 +530,11 @@ export default function StaffHomePage() {
                 <span className="font-medium">Role:</span> {displayRole}
               </p>
               <p>
-                <span className="font-medium">Session state:</span> {authPayload.auth.state}
+               <span className="font-medium">Session state:</span> {sessionState}
               </p>
               <p>
                 <span className="font-medium">Device ID:</span>{" "}
-                {authPayload.session?.device_id ?? "-"}
+                {sessionDeviceId}
               </p>
             </CardContent>
           </Card>
@@ -548,11 +552,11 @@ export default function StaffHomePage() {
               </p>
               <p>
                 <span className="font-medium">Session dibuat:</span>{" "}
-                {formatDateTime(authPayload.session?.created_at)}
+                {sessionCreatedAt}
               </p>
               <p>
                 <span className="font-medium">Terakhir aktif:</span>{" "}
-                {formatDateTime(authPayload.session?.last_seen)}
+                {sessionLastSeen}
               </p>
               <p className="pt-1 text-[11px] text-zinc-500">
                 Detail nama toko, alamat, jam buka, dan maps belum ditarik otomatis di FE
