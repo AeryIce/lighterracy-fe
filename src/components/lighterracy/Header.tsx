@@ -76,6 +76,7 @@ export default function Header() {
   const isAuthenticated = authState === "authenticated" && authUser !== null;
   const showStaffPanelLink = isAuthenticated && STAFF_PANEL_ROLES.has(authUser.role);
   const isOnStaffLoginPage = pathname === "/staff/login";
+  const isOnRegisterPage = pathname === "/register";
   const isOnStaffHomePage = pathname === "/staff";
 
   return (
@@ -121,14 +122,24 @@ export default function Header() {
               <span>{getSessionChipLabel(authUser)}</span>
             </span>
           ) : (
-            <Link
-              href={isOnStaffLoginPage ? "/staff/login" : "/staff/login"}
-              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs shadow-soft hover:bg-gray-50 sm:px-3 sm:text-sm"
-            >
-              <span>🔑</span>
-              <span className="sm:hidden">Staff</span>
-              <span className="hidden sm:inline">Staff Login</span>
-            </Link>
+            <>
+              <Link
+                href={isOnRegisterPage ? "/register" : "/register"}
+                className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs shadow-soft hover:bg-amber-100 sm:px-3 sm:text-sm"
+              >
+                <span>✨</span>
+                <span>Daftar</span>
+              </Link>
+
+              <Link
+                href={isOnStaffLoginPage ? "/staff/login" : "/staff/login"}
+                className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs shadow-soft hover:bg-gray-50 sm:px-3 sm:text-sm"
+              >
+                <span>🔑</span>
+                <span className="sm:hidden">Staff</span>
+                <span className="hidden sm:inline">Staff Login</span>
+              </Link>
+            </>
           )}
         </nav>
       </div>
