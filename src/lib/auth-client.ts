@@ -168,6 +168,53 @@ function normalizeAuthMePayload(raw: unknown): AuthMeResponse | null {
   };
 }
 
+
+export interface ReadingDnaOption {
+  value: string;
+  label: string;
+}
+
+export interface ReadingDnaOptions {
+  reading_purposes: ReadingDnaOption[];
+  favorite_genres: ReadingDnaOption[];
+  preferred_languages: ReadingDnaOption[];
+  reading_depth: ReadingDnaOption[];
+}
+
+export interface ReadingDnaProfile {
+  id: number;
+  reading_purposes: string[];
+  favorite_genres: string[];
+  preferred_languages: string[];
+  reading_depth: string | null;
+  reader_type_label: string;
+  personalization_enabled: boolean;
+  onboarding_completed_at: string | null;
+  updated_at: string | null;
+}
+
+export interface ReadingDnaResponse {
+  ok: boolean;
+  has_profile: boolean;
+  profile: ReadingDnaProfile | null;
+  options: ReadingDnaOptions;
+}
+
+export interface UpdateReadingDnaPayload {
+  reading_purposes: string[];
+  favorite_genres: string[];
+  preferred_languages: string[];
+  reading_depth: string | null;
+  personalization_enabled: boolean;
+}
+
+export interface UpdateReadingDnaResponse {
+  ok: boolean;
+  message: string;
+  profile: ReadingDnaProfile;
+  options: ReadingDnaOptions;
+}
+
 export function getSessionTokenFromBrowser(): string | null {
   if (typeof window === "undefined") {
     return null;
@@ -274,4 +321,52 @@ export async function logoutCurrentSession(): Promise<void> {
   } finally {
     clearSessionTokenFromBrowser();
   }
+}
+
+export async function fetchReadingDna(): Promise<ReadingDnaResponse> {
+  const response = await apiFetchWithAuth("/api/me/reading-dna", {
+    method: "GET",
+  });
+
+  if (response.status === 401) {
+    clearSessionTokenFromBrowser();
+    throw new Error("Sesi masuk sudah berakhir. Masuk ulang sebentar ya.");
+  }
+
+  if (!response.ok) {
+    throw new Error("Reading DNA belum bisa dimuat.");
+  }
+
+  return (await response.json()) as ReadingDnaResponse;
+}
+
+export async function updateReadingDna(
+  payload: UpdateReadingDnaPayload,
+): Promise<UpdateReadingDnaResponse> {
+  const response = await apiFetchWithAuth("/api/me/reading-dna", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+  if (response.status === 401) {
+    clearSessionTokenFromBrowser();
+    throw new Error("Sesi masuk sudah berakhir. Masuk ulang sebentar ya.");
+  }
+
+  if (!response.ok) {
+    let message = "Reading DNA belum bisa disimpan.";
+
+    try {
+      const errorPayload = (await response.json()) as { message?: unknown };
+      if (typeof errorPayload.message === "string") {
+        message = errorPayload.message;
+      }
+    } catch {
+      // Keep default friendly message.
+    }
+
+    throw new Error(message);
+  }
+
+  return (await response.json()) as UpdateReadingDnaResponse;
 }

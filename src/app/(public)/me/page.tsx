@@ -15,6 +15,7 @@ import type { AuthMeUser } from "@/lib/auth-client";
 import {
   clearSessionTokenFromBrowser,
   fetchAuthMe,
+  fetchReadingDna,
   logoutCurrentSession,
 } from "@/lib/auth-client";
 import { haversineKm } from "@/lib/geo";
@@ -22,6 +23,13 @@ import { haversineKm } from "@/lib/geo";
 type LoadState = "loading" | "ready" | "error";
 type DataState = "idle" | "loading" | "ready" | "error";
 type GeoPoint = { lat: number; lng: number };
+
+interface ReadingDnaStatus {
+  hasProfile: boolean;
+  readerTypeLabel: string | null;
+  favoriteGenresCount: number;
+  personalizationEnabled: boolean | null;
+}
 
 interface RecommendedBook {
   isbn: string;
@@ -282,7 +290,7 @@ function QuickActions() {
         <Link href="/stores">🏬 Toko terdekat</Link>
       </Button>
       <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
-        <Link href="#reading-dna">🌱 Atur minat</Link>
+        <Link href="/me/reading-dna">🌱 Atur minat</Link>
       </Button>
     </div>
   );
@@ -578,20 +586,42 @@ function NearbyStoresSection({ stores, dataState }: NearbyStoresSectionProps) {
   );
 }
 
-function FeatureCards() {
+interface FeatureCardsProps {
+  readingDnaStatus: ReadingDnaStatus | null;
+}
+
+function FeatureCards({ readingDnaStatus }: FeatureCardsProps) {
+  const hasReadingDna = readingDnaStatus?.hasProfile ?? false;
+  const readerType = readingDnaStatus?.readerTypeLabel ?? "Belum diisi";
+
   return (
     <div id="reading-dna" className="grid gap-4 md:grid-cols-3">
       <Card className="border-[#eadfce] bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="text-base">🌱 Reading DNA</CardTitle>
           <CardDescription className="leading-6">
-            Nanti kamu bisa jawab beberapa pertanyaan ringan supaya rekomendasi terasa lebih dekat.
+            {hasReadingDna
+              ? `Lightcy mulai mengenal gaya bacamu sebagai ${readerType}.`
+              : "Jawab beberapa pertanyaan ringan supaya rekomendasi terasa lebih dekat."}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-800">
-            Segera dibuka
+        <CardContent className="space-y-3">
+          <span
+            className={
+              hasReadingDna
+                ? "inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700"
+                : "inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-800"
+            }
+          >
+            {hasReadingDna ? readerType : "Yuk mulai"}
           </span>
+          <div>
+            <Button asChild size="sm" className="bg-[#0e2a47] text-white hover:bg-[#163a5f]">
+              <Link href="/me/reading-dna">
+                {hasReadingDna ? "Lihat / ubah" : "Isi Reading DNA"}
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -665,15 +695,17 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
   const [dataState, setDataState] = useState<DataState>("loading");
   const [promos, setPromos] = useState<PromoCardData[]>([]);
   const [stores, setStores] = useState<StoreCardData[]>([]);
+  const [readingDnaStatus, setReadingDnaStatus] = useState<ReadingDnaStatus | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadDashboardData() {
       try {
-        const [promosResponse, storesResponse] = await Promise.all([
+        const [promosResponse, storesResponse, readingDnaResponse] = await Promise.all([
           fetch("/data/promos.json", { cache: "no-store" }),
           fetch("/data/stores.json", { cache: "no-store" }),
+          fetchReadingDna().catch(() => null),
         ]);
 
         if (!promosResponse.ok || !storesResponse.ok) {
@@ -705,6 +737,16 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
 
         setPromos(nextPromos);
         setStores(nextStores);
+        setReadingDnaStatus(
+          readingDnaResponse
+            ? {
+                hasProfile: readingDnaResponse.has_profile,
+                readerTypeLabel: readingDnaResponse.profile?.reader_type_label ?? null,
+                favoriteGenresCount: readingDnaResponse.profile?.favorite_genres.length ?? 0,
+                personalizationEnabled: readingDnaResponse.profile?.personalization_enabled ?? null,
+              }
+            : null,
+        );
         setDataState("ready");
       } catch {
         if (cancelled) {
@@ -713,6 +755,7 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
 
         setPromos([]);
         setStores([]);
+        setReadingDnaStatus(null);
         setDataState("error");
       }
     }
@@ -733,7 +776,7 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         <BookRecommendationCarousel />
         <PromoSection promos={promos} dataState={dataState} />
         <NearbyStoresSection stores={stores} dataState={dataState} />
-        <FeatureCards />
+        <FeatureCards readingDnaStatus={readingDnaStatus} />
         <LogoutPanel onLogout={onLogout} isLoggingOut={isLoggingOut} />
       </section>
     </main>
