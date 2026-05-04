@@ -35,7 +35,7 @@ interface PublicRegisterErrorResponse {
 
 function getFriendlyError(data: PublicRegisterErrorResponse | null): string {
   if (!data) {
-    return "Gagal mengirim pendaftaran. Coba lagi sebentar ya.";
+    return "Lightcy belum berhasil mengirim link masuk. Coba lagi sebentar ya.";
   }
 
   if (data.message && data.message.trim().length > 0) {
@@ -48,19 +48,19 @@ function getFriendlyError(data: PublicRegisterErrorResponse | null): string {
     return firstError;
   }
 
-  return "Gagal mengirim pendaftaran. Coba lagi sebentar ya.";
+  return "Lightcy belum berhasil mengirim link masuk. Coba lagi sebentar ya.";
 }
 
 function getStatusLabel(status: string | undefined): string {
   if (status === "created") {
-    return "Akun baru dibuat";
+    return "Akun baru siap";
   }
 
   if (status === "existing") {
-    return "Akun sudah tersedia";
+    return "Akunmu sudah ada";
   }
 
-  return "Magic link dikirim";
+  return "Link masuk dikirim";
 }
 
 export function PublicRegisterForm() {
@@ -81,7 +81,7 @@ export function PublicRegisterForm() {
     }
 
     if (trimmedEmail.endsWith("@periplus.co.id")) {
-      return "Email kantor Periplus tidak dipakai untuk akun publik Lighterracy.";
+      return "Untuk akun kantor Periplus, pintu masuknya lewat jalur internal ya. Di sini khusus ruang pembaca umum.";
     }
 
     return null;
@@ -97,7 +97,7 @@ export function PublicRegisterForm() {
 
     if (!privacyAcknowledged) {
       setState("error");
-      setError("Centang persetujuan privasi dulu ya, supaya jelas data apa yang dipakai.");
+      setError("Centang dulu ya, supaya Lightcy bisa menemani kamu dengan izin yang jelas.");
       return;
     }
 
@@ -137,7 +137,7 @@ export function PublicRegisterForm() {
       setResultStatus(successData.status);
     } catch {
       setState("error");
-      setError("Terjadi kesalahan jaringan saat menghubungi server.");
+      setError("Jaringan lagi kurang bersahabat. Coba kirim lagi sebentar ya.");
     }
   }
 
@@ -149,33 +149,33 @@ export function PublicRegisterForm() {
       <section className="mx-auto flex max-w-5xl flex-col gap-6 lg:flex-row lg:items-stretch">
         <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#fda50f] via-[#f49a1e] to-[#0e2a47] p-6 text-white shadow-2xl lg:w-[46%] lg:p-8">
           <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">
-            Lighterracy public account
+            Lightcy reading companion
           </p>
           <h1 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl">
-            Masuk ke ruang bacaan yang lebih personal.
+            Halo, aku Lightcy. Yuk mulai rak bacaanmu.
           </h1>
           <p className="mt-4 text-sm leading-7 text-white/80">
-            Buat akun pembaca umum supaya Lighterracy bisa mulai mengingat preferensi
-            bacaan yang kamu izinkan—bukan mengikuti diam-diam, tapi menemani dengan jelas.
+            Aku bantu kamu menemukan buku yang lebih cocok dengan mood, minat, dan fase hidupmu.
+            Pelan-pelan saja—kamu yang memilih apa yang mau dibagikan.
           </p>
 
           <div className="mt-6 grid gap-3 text-sm">
             <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-              <p className="font-medium">✨ Rekomendasi lebih cocok</p>
+              <p className="font-medium">✨ Teman cari buku</p>
               <p className="mt-1 text-xs leading-5 text-white/75">
-                Nanti preferensi dan Reading DNA akan membantu pilihan buku terasa lebih pas.
+                Lagi butuh bacaan yang menenangkan, seru, atau buat hadiah? Nanti aku bantu pilihkan.
               </p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-              <p className="font-medium">🔐 Tetap transparan</p>
+              <p className="font-medium">🌱 Makin kenal seleramu</p>
               <p className="mt-1 text-xs leading-5 text-white/75">
-                Data dipakai untuk pengalaman membaca, dan kontrol privasi akan dibuka bertahap.
+                Dari pilihan yang kamu izinkan, rekomendasi bisa terasa lebih dekat dengan kamu.
               </p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-              <p className="font-medium">📚 Tanpa password dulu</p>
+              <p className="font-medium">🔐 Masuk tanpa ribet</p>
               <p className="mt-1 text-xs leading-5 text-white/75">
-                Kami kirim magic link ke email kamu. Klik link itu untuk masuk dengan aman.
+                Cukup pakai email. Aku kirim link masuk, kamu klik, selesai.
               </p>
             </div>
           </div>
@@ -185,8 +185,8 @@ export function PublicRegisterForm() {
           <CardHeader>
             <CardTitle className="text-2xl">Daftar / Masuk</CardTitle>
             <CardDescription className="leading-6">
-              Satu pintu ringan untuk akun pembaca umum. Kalau email kamu sudah terdaftar,
-              Lighterracy akan mengirim magic link baru tanpa membuat akun duplikat.
+              Masukkan nama panggilan dan emailmu. Kalau akunmu sudah ada, Lightcy akan
+              kirim link masuk baru—nggak perlu ingat password.
             </CardDescription>
           </CardHeader>
 
@@ -207,7 +207,7 @@ export function PublicRegisterForm() {
                   disabled={isLoading || isSuccess}
                 />
                 <p className="text-xs text-zinc-500">
-                  Nama ini dipakai untuk sapaan ringan di pengalaman Lighterracy.
+                  Biar nanti Lightcy bisa menyapa kamu dengan lebih hangat.
                 </p>
               </div>
 
@@ -231,7 +231,7 @@ export function PublicRegisterForm() {
                   </p>
                 ) : (
                   <p className="text-xs text-zinc-500">
-                    Untuk staff/internal Periplus, gunakan jalur internal yang sesuai.
+                    Pakai email pribadi ya. Akun kantor/internal punya jalurnya sendiri.
                   </p>
                 )}
               </div>
@@ -245,8 +245,8 @@ export function PublicRegisterForm() {
                   className="mt-1 h-4 w-4 rounded border-amber-400"
                 />
                 <span className="text-xs leading-5 text-amber-950">
-                  Saya paham Lighterracy akan memakai data yang saya izinkan—seperti nama,
-                  email, dan preferensi bacaan—untuk membantu personalisasi pengalaman membaca.
+                  Saya setuju Lightcy memakai data yang saya pilih—seperti nama, email, dan minat
+                  bacaan—untuk membantu memberi rekomendasi yang lebih pas. Bisa diatur bertahap nanti.
                 </span>
               </label>
 
@@ -263,7 +263,7 @@ export function PublicRegisterForm() {
                   </div>
                   <p className="text-sm leading-6 text-emerald-800">{message}</p>
                   <p className="text-xs leading-5 text-emerald-700">
-                    Cek inbox email kamu. Link login berlaku terbatas dan hanya bisa dipakai sekali.
+                    Cek inbox email kamu ya. Link masuk ini hanya berlaku sebentar dan cuma bisa dipakai sekali.
                   </p>
                 </div>
               )}
@@ -278,7 +278,7 @@ export function PublicRegisterForm() {
                     {debugLink}
                   </a>
                   <p className="mt-2 text-[11px] text-zinc-500">
-                    Di production, link ini dikirim via email dan tidak ditampilkan di UI.
+                    Di production, link ini dikirim lewat email dan tidak ditampilkan di UI.
                   </p>
                 </div>
               )}
@@ -288,7 +288,7 @@ export function PublicRegisterForm() {
                 disabled={isLoading || isSuccess}
                 className="w-full rounded-full bg-[#0e2a47] text-white hover:bg-[#163a5f]"
               >
-                {isLoading ? "Mengirim magic link..." : "Kirim magic link"}
+                {isLoading ? "Mengirim link masuk..." : "Kirim link masuk"}
               </Button>
 
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
