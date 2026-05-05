@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getBackendUrl } from "@/lib/env";
+import PurchaseLinksPanel from "./PurchaseLinksPanel";
 
 /** Dimensi dari Google Books (bisa string "8 inches", "20 cm", dll) */
 export type Dim =
@@ -309,6 +310,8 @@ export default function BookDetailModal({ open, onOpenChange, book }: Props) {
                     ))}
                   </div>
                 ) : null}
+
+                <PurchaseLinksPanel isbn={book.isbn13} sourcePage="book_detail" />
               </div>
             </div>
 

@@ -1,0 +1,238 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { getBackendUrl } from "@/lib/env";
+
+type PurchaseChannel = "periplus" | "tokopedia" | "shopee" | string;
+
+type PurchaseLink = {
+  id: number | null;
+  book_id: number | null;
+  isbn_13: string;
+  channel: PurchaseChannel;
+  label: string;
+  priority_order: number;
+  redirect_url: string;
+};
+
+type PurchaseLinksResponse = {
+  ok: boolean;
+  isbn: string;
+  links: PurchaseLink[];
+};
+
+type Props = {
+  isbn?: string | null;
+  sourcePage?: "book_detail" | "scan_result" | "recommendation" | "lightcy_chat";
+};
+
+const CHANNEL_ORDER: Record<string, number> = {
+  periplus: 10,
+  tokopedia: 20,
+  shopee: 30,
+};
+
+const CHANNEL_META: Record<
+  string,
+  {
+    badge: string;
+    className: string;
+    helper: string;
+  }
+> = {
+  periplus: {
+    badge: "Official",
+    className:
+      "border-[#fda50f]/40 bg-[#fda50f] text-neutral-950 hover:bg-[#f2a000]",
+    helper: "Langsung ke halaman buku di Periplus.com.",
+  },
+  tokopedia: {
+    badge: "Marketplace",
+    className: "border-emerald-200 bg-emerald-600 text-white hover:bg-emerald-700",
+    helper: "Link produk Tokopedia yang sudah dipetakan.",
+  },
+  shopee: {
+    badge: "Marketplace",
+    className: "border-orange-200 bg-orange-600 text-white hover:bg-orange-700",
+    helper: "Link produk Shopee dari data toko resmi.",
+  },
+};
+
+function getOrCreateVisitorToken(): string {
+  if (typeof window === "undefined") return "";
+
+  const key = "lighterracy_visitor_token";
+  const existing = window.localStorage.getItem(key);
+  if (existing && existing.trim().length > 0) return existing;
+
+  const generated =
+    typeof window.crypto?.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  window.localStorage.setItem(key, generated);
+  return generated;
+}
+
+function appendTrackingParams(rawUrl: string, visitorToken: string, sourcePage: string): string {
+  try {
+    const url = new URL(rawUrl);
+    url.searchParams.set("source_page", sourcePage);
+    if (visitorToken) {
+      url.searchParams.set("visitor_token", visitorToken);
+    }
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
+function channelLabel(link: PurchaseLink): string {
+  if (link.label?.trim()) return link.label;
+
+  if (link.channel === "periplus") return "Beli di Periplus";
+  if (link.channel === "tokopedia") return "Beli di Tokopedia";
+  if (link.channel === "shopee") return "Beli di Shopee";
+
+  return `Beli via ${link.channel}`;
+}
+
+export default function PurchaseLinksPanel({ isbn, sourcePage = "book_detail" }: Props) {
+  const [links, setLinks] = useState<PurchaseLink[]>([]);
+  const [visitorToken, setVisitorToken] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setVisitorToken(getOrCreateVisitorToken());
+  }, []);
+
+  useEffect(() => {
+    if (!isbn) {
+      setLinks([]);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadLinks() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const backend = getBackendUrl();
+        const res = await fetch(
+          `${backend}/api/books/${encodeURIComponent(isbn)}/purchase-links?source_page=${encodeURIComponent(sourcePage)}`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+            cache: "no-store",
+          },
+        );
+
+        if (!res.ok) {
+          if (!cancelled) {
+            setLinks([]);
+            setError("Link pembelian belum bisa dimuat.");
+          }
+          return;
+        }
+
+        const data = (await res.json()) as PurchaseLinksResponse;
+        if (!cancelled) {
+          setLinks(Array.isArray(data.links) ? data.links : []);
+        }
+      } catch {
+        if (!cancelled) {
+          setLinks([]);
+          setError("Jaringan lagi kurang bersahabat. Coba cek lagi sebentar ya.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadLinks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isbn, sourcePage]);
+
+  const sortedLinks = useMemo(
+    () =>
+      [...links].sort((a, b) => {
+        const byOrder = (CHANNEL_ORDER[a.channel] ?? 99) - (CHANNEL_ORDER[b.channel] ?? 99);
+        if (byOrder !== 0) return byOrder;
+        return a.priority_order - b.priority_order;
+      }),
+    [links],
+  );
+
+  if (!isbn) return null;
+
+  return (
+    <section className="mt-4 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-3 shadow-sm md:p-4">
+      <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
+            Mau lanjut beli?
+          </p>
+          <h3 className="text-base font-semibold text-neutral-950">
+            Pilih pintu belanja yang nyaman buat kamu
+          </h3>
+        </div>
+        <p className="text-xs text-neutral-500">Klik tetap lewat Lighterracy agar minat buku bisa terbaca secara agregat.</p>
+      </div>
+
+      {loading ? (
+        <div className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-amber-500" />
+          Lightcy lagi cek link pembelian...
+        </div>
+      ) : null}
+
+      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+
+      {!loading && !error && sortedLinks.length === 0 ? (
+        <p className="mt-3 text-sm text-neutral-600">
+          Link pembelian untuk ISBN ini belum tersedia. Nanti Lightcy bantu lengkapi pelan-pelan ya.
+        </p>
+      ) : null}
+
+      {sortedLinks.length > 0 ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {sortedLinks.map((link) => {
+            const meta = CHANNEL_META[link.channel] ?? {
+              badge: "Link",
+              className: "border-neutral-200 bg-neutral-900 text-white hover:bg-neutral-800",
+              helper: "Link pembelian yang tersedia untuk buku ini.",
+            };
+            const href = appendTrackingParams(link.redirect_url, visitorToken, sourcePage);
+
+            return (
+              <a
+                key={`${link.channel}-${link.id ?? link.redirect_url}`}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group rounded-2xl border px-3 py-3 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${meta.className}`}
+              >
+                <span className="mb-2 inline-flex rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]">
+                  {meta.badge}
+                </span>
+                <span className="block">{channelLabel(link)}</span>
+                <span className="mt-1 block text-xs font-normal opacity-85">{meta.helper}</span>
+                <span className="mt-2 inline-flex text-xs font-semibold opacity-90 group-hover:translate-x-0.5">
+                  Buka link →
+                </span>
+              </a>
+            );
+          })}
+        </div>
+      ) : null}
+    </section>
+  );
+}
