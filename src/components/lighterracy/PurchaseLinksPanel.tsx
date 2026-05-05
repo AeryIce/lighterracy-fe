@@ -48,7 +48,8 @@ const CHANNEL_META: Record<
   },
   tokopedia: {
     badge: "Marketplace",
-    className: "border-emerald-200 bg-emerald-600 text-white hover:bg-emerald-700",
+    className:
+      "border-emerald-200 bg-emerald-600 text-white hover:bg-emerald-700",
     helper: "Link produk Tokopedia yang sudah dipetakan.",
   },
   shopee: {
@@ -74,13 +75,19 @@ function getOrCreateVisitorToken(): string {
   return generated;
 }
 
-function appendTrackingParams(rawUrl: string, visitorToken: string, sourcePage: string): string {
+function appendTrackingParams(
+  rawUrl: string,
+  visitorToken: string,
+  sourcePage: string,
+): string {
   try {
     const url = new URL(rawUrl);
     url.searchParams.set("source_page", sourcePage);
+
     if (visitorToken) {
       url.searchParams.set("visitor_token", visitorToken);
     }
+
     return url.toString();
   } catch {
     return rawUrl;
@@ -97,20 +104,27 @@ function channelLabel(link: PurchaseLink): string {
   return `Beli via ${link.channel}`;
 }
 
-export default function PurchaseLinksPanel({ isbn, sourcePage = "book_detail" }: Props) {
+export default function PurchaseLinksPanel({
+  isbn,
+  sourcePage = "book_detail",
+}: Props) {
   const [links, setLinks] = useState<PurchaseLink[]>([]);
   const [visitorToken, setVisitorToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const safeIsbn = typeof isbn === "string" ? isbn.trim() : "";
+  const safeSourcePage = sourcePage ?? "book_detail";
 
   useEffect(() => {
     setVisitorToken(getOrCreateVisitorToken());
   }, []);
 
   useEffect(() => {
-    if (!isbn) {
+    if (!safeIsbn) {
       setLinks([]);
       setError(null);
+      setLoading(false);
       return;
     }
 
@@ -123,7 +137,9 @@ export default function PurchaseLinksPanel({ isbn, sourcePage = "book_detail" }:
 
         const backend = getBackendUrl();
         const res = await fetch(
-          `${backend}/api/books/${encodeURIComponent(isbn)}/purchase-links?source_page=${encodeURIComponent(sourcePage)}`,
+          `${backend}/api/books/${encodeURIComponent(
+            safeIsbn,
+          )}/purchase-links?source_page=${encodeURIComponent(safeSourcePage)}`,
           {
             headers: {
               Accept: "application/json",
@@ -141,6 +157,7 @@ export default function PurchaseLinksPanel({ isbn, sourcePage = "book_detail" }:
         }
 
         const data = (await res.json()) as PurchaseLinksResponse;
+
         if (!cancelled) {
           setLinks(Array.isArray(data.links) ? data.links : []);
         }
@@ -159,19 +176,22 @@ export default function PurchaseLinksPanel({ isbn, sourcePage = "book_detail" }:
     return () => {
       cancelled = true;
     };
-  }, [isbn, sourcePage]);
+  }, [safeIsbn, safeSourcePage]);
 
   const sortedLinks = useMemo(
     () =>
       [...links].sort((a, b) => {
-        const byOrder = (CHANNEL_ORDER[a.channel] ?? 99) - (CHANNEL_ORDER[b.channel] ?? 99);
+        const byOrder =
+          (CHANNEL_ORDER[a.channel] ?? 99) - (CHANNEL_ORDER[b.channel] ?? 99);
+
         if (byOrder !== 0) return byOrder;
+
         return a.priority_order - b.priority_order;
       }),
     [links],
   );
 
-  if (!isbn) return null;
+  if (!safeIsbn) return null;
 
   return (
     <section className="mt-4 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-3 shadow-sm md:p-4">
@@ -184,7 +204,10 @@ export default function PurchaseLinksPanel({ isbn, sourcePage = "book_detail" }:
             Pilih pintu belanja yang nyaman buat kamu
           </h3>
         </div>
-        <p className="text-xs text-neutral-500">Klik tetap lewat Lighterracy agar minat buku bisa terbaca secara agregat.</p>
+        <p className="text-xs text-neutral-500">
+          Klik tetap lewat Lighterracy agar minat buku bisa terbaca secara
+          agregat.
+        </p>
       </div>
 
       {loading ? (
@@ -198,7 +221,8 @@ export default function PurchaseLinksPanel({ isbn, sourcePage = "book_detail" }:
 
       {!loading && !error && sortedLinks.length === 0 ? (
         <p className="mt-3 text-sm text-neutral-600">
-          Link pembelian untuk ISBN ini belum tersedia. Nanti Lightcy bantu lengkapi pelan-pelan ya.
+          Link pembelian untuk ISBN ini belum tersedia. Nanti Lightcy bantu
+          lengkapi pelan-pelan ya.
         </p>
       ) : null}
 
@@ -207,10 +231,15 @@ export default function PurchaseLinksPanel({ isbn, sourcePage = "book_detail" }:
           {sortedLinks.map((link) => {
             const meta = CHANNEL_META[link.channel] ?? {
               badge: "Link",
-              className: "border-neutral-200 bg-neutral-900 text-white hover:bg-neutral-800",
+              className:
+                "border-neutral-200 bg-neutral-900 text-white hover:bg-neutral-800",
               helper: "Link pembelian yang tersedia untuk buku ini.",
             };
-            const href = appendTrackingParams(link.redirect_url, visitorToken, sourcePage);
+            const href = appendTrackingParams(
+              link.redirect_url,
+              visitorToken,
+              safeSourcePage,
+            );
 
             return (
               <a
@@ -224,7 +253,9 @@ export default function PurchaseLinksPanel({ isbn, sourcePage = "book_detail" }:
                   {meta.badge}
                 </span>
                 <span className="block">{channelLabel(link)}</span>
-                <span className="mt-1 block text-xs font-normal opacity-85">{meta.helper}</span>
+                <span className="mt-1 block text-xs font-normal opacity-85">
+                  {meta.helper}
+                </span>
                 <span className="mt-2 inline-flex text-xs font-semibold opacity-90 group-hover:translate-x-0.5">
                   Buka link →
                 </span>
