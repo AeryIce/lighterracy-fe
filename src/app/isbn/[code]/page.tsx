@@ -1,50 +1,15 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import BookDetailModal, { type BookFull } from "@/components/lighterracy/BookDetailModal";
 
 // Next 16 dynamic params shape in this project
 type ParamsPromise = Promise<{ code: string }>;
 export const dynamic = "force-dynamic";
 
-type GoogleApiBook = {
-  title?: string;
-  subtitle?: string;
-  authors?: string[];
-  publisher?: string;
-  publishedDate?: string;
-  description?: string;
-  textSnippet?: string;
-  isbn13?: string | null;
-  cover?: string | null;
-  imageLinks?:
-    | {
-        smallThumbnail?: string;
-        thumbnail?: string;
-        medium?: string;
-        large?: string;
-      }
-    | null;
-  pageCount?: number | null;
-  printedPageCount?: number | null;
-  dimensions?: { height?: string; width?: string; thickness?: string } | null;
-  dimensionsCm?: {
-    heightCm?: number;
-    widthCm?: number;
-    thicknessCm?: number;
-  } | null;
-  categories?: string[];
-  averageRating?: number | null;
-  ratingsCount?: number | null;
-  previewLink?: string;
-  infoLink?: string;
-};
+type BookSource = "internal" | "external_google" | "not_found" | string;
 
-type GoogleApiSuccess = { found: true; book: GoogleApiBook };
-type GoogleApiNotFound = { found: false };
-type GoogleApiResponse = GoogleApiSuccess | GoogleApiNotFound;
-
-type InternalBookPayload = {
+type BookDetailPayload = {
   id?: string | number | null;
+  requested_isbn?: string | null;
   isbn_13?: string | null;
   isbn_10?: string | null;
   title?: string | null;
@@ -52,26 +17,48 @@ type InternalBookPayload = {
   authors?: unknown;
   publisher?: string | null;
   published_year?: number | string | null;
+  published_date?: string | null;
   language?: string | null;
   page_count?: number | null;
   categories?: unknown;
   category_internal?: string | null;
   tags?: unknown;
   cover_url?: string | null;
+  cover_type?: string | null;
+  edition_code?: string | null;
+  size_code?: string | null;
   description?: string | null;
   description_team?: string | null;
   description_google?: string | null;
   description_source?: string | null;
+  core_summary?: unknown;
+  core_summary_source?: string | null;
+  google_volume_id?: string | null;
+  data_source?: string | null;
+  data_source_label?: string | null;
+  can_recommend?: boolean | null;
+  average_rating?: number | null;
+  ratings_count?: number | null;
+  dimensions?: { height?: string; width?: string; thickness?: string } | null;
 };
 
-type LightcyPreviewResponse = {
-  source?: string;
-  mode?: string;
-  context?: {
-    book?: InternalBookPayload;
-    core_summary?: unknown;
-    materials?: unknown[];
-  };
+type BookDetailResponse = {
+  ok?: boolean;
+  requested_isbn?: string;
+  source?: BookSource;
+  source_label?: string;
+  can_recommend?: boolean;
+  is_internal?: boolean;
+  book?: BookDetailPayload | null;
+  external_enrichment?: unknown;
+};
+
+type PageBookResult = {
+  book: BookFull | null;
+  source: BookSource;
+  sourceLabel: string;
+  canRecommend: boolean;
+  showPurchaseLinks: boolean;
 };
 
 function getBackendUrl(): string | null {
@@ -92,7 +79,19 @@ function cleanText(value?: string | null): string {
 function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value
-      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .map((item) => {
+        if (typeof item === "string") return item.trim();
+        if (item && typeof item === "object") {
+          const record = item as Record<string, unknown>;
+          for (const key of ["name", "title", "label", "value"]) {
+            const candidate = record[key];
+            if (typeof candidate === "string" && candidate.trim()) {
+              return candidate.trim();
+            }
+          }
+        }
+        return "";
+      })
       .filter((item) => item.length > 0);
   }
 
@@ -132,123 +131,127 @@ function coreSummaryToText(payload: unknown): string {
   return chunks.join("\n\n").trim();
 }
 
-function pickInternalDescription(book: InternalBookPayload, coreSummary: unknown) {
+function pickDescription(book: BookDetailPayload, source: BookSource) {
   const team = cleanText(book.description_team);
   const main = cleanText(book.description);
-  const core = coreSummaryToText(coreSummary);
+  const core = coreSummaryToText(book.core_summary);
   const google = cleanText(book.description_google);
 
-  if (team) return { text: team, source: "Deskripsi internal" };
-  if (main) return { text: main, source: book.description_source === "google" ? "Deskripsi Google Books" : "Deskripsi internal" };
-  if (core) return { text: core, source: "Core Summary AI" };
-  if (google) return { text: google, source: "Deskripsi Google Books" };
+  if (team) return { text: team, label: "Deskripsi internal" };
+  if (main) {
+    const label =
+      source === "external_google" || book.description_source === "external_google"
+        ? "Deskripsi Google Books"
+        : "Deskripsi internal";
+    return { text: main, label };
+  }
+  if (core) return { text: core, label: "Core Summary AI" };
+  if (google) return { text: google, label: "Deskripsi Google Books" };
 
-  return { text: "", source: "" };
+  return { text: "", label: "" };
 }
 
-function mapInternalBook(response: LightcyPreviewResponse, requestedIsbn: string): BookFull | null {
-  const context = response.context;
-  const b = context?.book;
+function mapBookDetail(response: BookDetailResponse, requestedIsbn: string): PageBookResult {
+  const source = response.source ?? "not_found";
+  const isInternal = source === "internal" || response.is_internal === true;
+  const b = response.book;
 
-  if (!b?.title) return null;
+  if (!b?.title) {
+    return {
+      book: null,
+      source,
+      sourceLabel: response.source_label ?? "Belum ditemukan",
+      canRecommend: false,
+      showPurchaseLinks: false,
+    };
+  }
 
-  const description = pickInternalDescription(b, context?.core_summary);
+  const description = pickDescription(b, source);
   const categories = [
     ...toStringArray(b.categories),
     ...toStringArray(b.category_internal),
     ...toStringArray(b.tags),
   ];
-
   const uniqueCategories = Array.from(new Set(categories)).slice(0, 8);
-  const publishedYear = b.published_year ? String(b.published_year) : "";
+
+  const publishedDate =
+    cleanText(b.published_date) ||
+    (b.published_year === null || b.published_year === undefined
+      ? ""
+      : String(b.published_year));
+
+  const cover = httpsify(b.cover_url);
 
   return {
-    title: b.title,
-    subtitle: cleanText(b.subtitle),
-    authors: toStringArray(b.authors),
-    publisher: cleanText(b.publisher),
-    publishedDate: publishedYear,
-    description: description.text,
-    descriptionSourceLabel: description.source,
-    textSnippet: "",
-    isbn13: cleanText(b.isbn_13) || requestedIsbn,
-    pageCount: b.page_count ?? null,
-    dimensions: null,
-    categories: uniqueCategories,
-    averageRating: null,
-    ratingsCount: null,
-    imageLinks: {
-      large: httpsify(b.cover_url),
-      medium: httpsify(b.cover_url),
-      thumbnail: httpsify(b.cover_url),
-      smallThumbnail: httpsify(b.cover_url),
+    book: {
+      title: cleanText(b.title) || "—",
+      subtitle: cleanText(b.subtitle),
+      authors: toStringArray(b.authors),
+      publisher: cleanText(b.publisher),
+      publishedDate,
+      description: description.text,
+      descriptionSourceLabel: description.label,
+      textSnippet: "",
+      isbn13: cleanText(b.isbn_13) || requestedIsbn,
+      pageCount: b.page_count ?? null,
+      dimensions: b.dimensions ?? null,
+      categories: uniqueCategories,
+      averageRating: b.average_rating ?? null,
+      ratingsCount: b.ratings_count ?? null,
+      imageLinks: {
+        large: cover,
+        medium: cover,
+        thumbnail: cover,
+        smallThumbnail: cover,
+      },
+      dataSource: isInternal ? "internal" : "google",
     },
-    dataSource: "internal",
+    source,
+    sourceLabel:
+      response.source_label ?? (isInternal ? "Data Lighterracy" : "Info eksternal"),
+    canRecommend: response.can_recommend === true || b.can_recommend === true,
+    showPurchaseLinks: isInternal,
   };
 }
 
-async function fetchInternalBook(isbn: string): Promise<BookFull | null> {
+async function fetchBookDetail(isbn: string): Promise<PageBookResult> {
   const backend = getBackendUrl();
-  if (!backend) return null;
+  if (!backend) {
+    return {
+      book: null,
+      source: "not_found",
+      sourceLabel: "Backend belum tersambung",
+      canRecommend: false,
+      showPurchaseLinks: false,
+    };
+  }
 
   try {
     const res = await fetch(
-      `${backend}/api/lightcy/books/isbn/${encodeURIComponent(isbn)}`,
+      `${backend}/api/books/${encodeURIComponent(isbn)}/detail`,
       { cache: "no-store" },
     );
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return {
+        book: null,
+        source: "not_found",
+        sourceLabel: "Buku belum ditemukan",
+        canRecommend: false,
+        showPurchaseLinks: false,
+      };
+    }
 
-    const data = (await res.json()) as LightcyPreviewResponse;
-    return mapInternalBook(data, isbn);
+    const data = (await res.json()) as BookDetailResponse;
+    return mapBookDetail(data, isbn);
   } catch {
-    return null;
-  }
-}
-
-async function fetchGoogleBook(isbn: string): Promise<BookFull | null> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (process.env.VERCEL ? "https" : "http");
-  const base = `${proto}://${host}`;
-
-  try {
-    const res = await fetch(`${base}/api/isbn/${encodeURIComponent(isbn)}`, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) return null;
-
-    const data = (await res.json()) as GoogleApiResponse;
-    if (data.found !== true) return null;
-
-    const b = data.book;
-
     return {
-      title: b.title || "—",
-      subtitle: b.subtitle || "",
-      authors: b.authors ?? [],
-      publisher: b.publisher || "",
-      publishedDate: b.publishedDate || "",
-      description: b.description || "",
-      descriptionSourceLabel: b.description ? "Deskripsi Google Books" : "",
-      textSnippet: b.textSnippet || "",
-      isbn13: b.isbn13 ?? isbn,
-      imageLinks: {
-        large: httpsify(b.imageLinks?.large),
-        medium: httpsify(b.imageLinks?.medium),
-        thumbnail: httpsify(b.imageLinks?.thumbnail) ?? httpsify(b.cover),
-        smallThumbnail: httpsify(b.imageLinks?.smallThumbnail),
-      },
-      pageCount: b.printedPageCount ?? b.pageCount ?? null,
-      dimensions: b.dimensions ?? null,
-      categories: b.categories ?? [],
-      averageRating: b.averageRating ?? null,
-      ratingsCount: b.ratingsCount ?? null,
-      dataSource: "google",
+      book: null,
+      source: "not_found",
+      sourceLabel: "Buku belum ditemukan",
+      canRecommend: false,
+      showPurchaseLinks: false,
     };
-  } catch {
-    return null;
   }
 }
 
@@ -267,9 +270,14 @@ export default async function IsbnPage({
   params: ParamsPromise;
 }) {
   const { code } = await params;
+  const result = await fetchBookDetail(code);
 
-  const internalBook = await fetchInternalBook(code);
-  const book = internalBook ?? (await fetchGoogleBook(code));
-
-  return <BookDetailModal open book={book} purchaseIsbn={code} />;
+  return (
+    <BookDetailModal
+      open
+      book={result.book}
+      purchaseIsbn={code}
+      showPurchaseLinks={result.showPurchaseLinks}
+    />
+  );
 }

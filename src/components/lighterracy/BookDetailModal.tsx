@@ -45,6 +45,7 @@ type Props = {
   onOpenChange?: (v: boolean) => void;
   book: BookFull | null;
   purchaseIsbn?: string | null;
+  showPurchaseLinks?: boolean;
 };
 
 function decodeEntities(input = ""): string {
@@ -122,6 +123,7 @@ export default function BookDetailModal({
   onOpenChange,
   book,
   purchaseIsbn,
+  showPurchaseLinks = true,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -420,7 +422,20 @@ export default function BookDetailModal({
               </>
             )}
 
-            <PurchaseLinksPanel isbn={purchaseLookupIsbn} sourcePage="book_detail" />
+            {showPurchaseLinks ? (
+              <PurchaseLinksPanel isbn={purchaseLookupIsbn} sourcePage="book_detail" />
+            ) : (
+              <section className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">
+                  Link pembelian belum tersedia
+                </p>
+                <p className="mt-2 leading-6">
+                  Info buku ini boleh tampil sebagai hasil scan, tapi Lighterracy belum punya
+                  data internal untuk kanal pembelian ISBN ini. Lightcy tidak akan menebak link
+                  marketplace agar datanya tetap jujur.
+                </p>
+              </section>
+            )}
 
             {lightcyError ? (
               <p className="mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
