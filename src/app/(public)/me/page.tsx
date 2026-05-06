@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { AuthMeUser } from "@/lib/auth-client";
 import {
+  apiFetchWithAuth,
   clearSessionTokenFromBrowser,
   fetchAuthMe,
   fetchReadingDna,
@@ -33,12 +34,35 @@ interface ReadingDnaStatus {
 }
 
 interface RecommendedBook {
+  id: number;
   isbn: string;
   title: string;
   author: string;
   genre: string;
-  coverUrl: string;
+  coverUrl: string | null;
   reason: string;
+  sourceLabel: string;
+  purchaseChannels: string[];
+}
+
+interface InternalRecommendationResponse {
+  ok: boolean;
+  source: "internal";
+  source_label: string;
+  strategy: string;
+  has_profile: boolean;
+  reader_type_label: string | null;
+  favorite_genres: string[];
+  books: Array<Record<string, unknown>>;
+  empty_state: { title: string; message: string } | null;
+}
+
+interface RecommendationStateData {
+  books: RecommendedBook[];
+  sourceLabel: string;
+  strategy: string;
+  emptyTitle: string;
+  emptyMessage: string;
 }
 
 interface PromoCardData {
@@ -80,170 +104,25 @@ const GENRE_LABELS: Record<string, string> = {
   gift_ideas: "Gift ideas",
 };
 
-const DEFAULT_RECOMMENDED_BOOKS: RecommendedBook[] = [
-  {
-    isbn: "9780735211292",
-    title: "Atomic Habits",
-    author: "James Clear",
-    genre: "Self-growth",
-    coverUrl:
-      "https://storage.googleapis.com/du-prd/books/images/9780735211292.jpg",
-    reason: "Cocok kalau kamu ingin mulai membangun kebiasaan kecil yang lebih rapi.",
-  },
-  {
-    isbn: "9780062457714",
-    title: "The Subtle Art of Not Giving a F*ck",
-    author: "Mark Manson",
-    genre: "Reflective non-fiction",
-    coverUrl:
-      "https://storage.googleapis.com/du-prd/books/images/9780062457714.jpg",
-    reason: "Untuk hari ketika kamu butuh bacaan yang jujur, santai, tapi tetap menampar lembut.",
-  },
-  {
-    isbn: "9781524763138",
-    title: "The Mountain Is You",
-    author: "Brianna Wiest",
-    genre: "Healing",
-    coverUrl:
-      "https://storage.googleapis.com/du-prd/books/images/9781524763138.jpg",
-    reason: "Pilihan awal untuk pembaca yang sedang ingin memahami diri pelan-pelan.",
-  },
-  {
-    isbn: "9780143127741",
-    title: "Deep Work",
-    author: "Cal Newport",
-    genre: "Productivity",
-    coverUrl:
-      "https://storage.googleapis.com/du-prd/books/images/9781455586691.jpg",
-    reason: "Pas untuk kamu yang ingin kembali fokus di tengah dunia yang rame banget.",
-  },
-];
+function toReadableGenreLabel(value: string): string {
+  return value
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
-const RECOMMENDED_BOOKS_BY_GENRE: Record<string, RecommendedBook[]> = {
-  self_help: [
-    DEFAULT_RECOMMENDED_BOOKS[0],
-    DEFAULT_RECOMMENDED_BOOKS[2],
-    {
-      isbn: "9780812981605",
-      title: "The Power of Habit",
-      author: "Charles Duhigg",
-      genre: "Self-help",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780812981605.jpg",
-      reason: "Buat kamu yang ingin memahami kenapa kebiasaan terbentuk dan bagaimana mengubahnya pelan-pelan.",
-    },
-  ],
-  psychology: [
-    {
-      isbn: "9780374533557",
-      title: "Thinking, Fast and Slow",
-      author: "Daniel Kahneman",
-      genre: "Psychology",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780374533557.jpg",
-      reason: "Cocok untuk pembaca yang suka memahami cara pikiran bekerja sebelum mengambil keputusan.",
-    },
-    DEFAULT_RECOMMENDED_BOOKS[2],
-    DEFAULT_RECOMMENDED_BOOKS[3],
-  ],
-  faith_spiritual: [
-    {
-      isbn: "9780061122415",
-      title: "The Alchemist",
-      author: "Paulo Coelho",
-      genre: "Reflective fiction",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780061122415.jpg",
-      reason: "Bacaan reflektif yang ringan untuk menemani pencarian makna dan keberanian melangkah.",
-    },
-    {
-      isbn: "9780807014271",
-      title: "Man's Search for Meaning",
-      author: "Viktor E. Frankl",
-      genre: "Meaning & resilience",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780807014271.jpg",
-      reason: "Untuk hari ketika kamu butuh bacaan yang dalam tentang makna, luka, dan daya tahan manusia.",
-    },
-    DEFAULT_RECOMMENDED_BOOKS[2],
-  ],
-  fiction: [
-    {
-      isbn: "9780735219106",
-      title: "Where the Crawdads Sing",
-      author: "Delia Owens",
-      genre: "Fiction",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780735219090.jpg",
-      reason: "Pilihan fiksi dengan suasana kuat untuk pembaca yang suka cerita emosional dan atmosferik.",
-    },
-    {
-      isbn: "9780525559474",
-      title: "The Midnight Library",
-      author: "Matt Haig",
-      genre: "Reflective fiction",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780525559474.jpg",
-      reason: "Cocok kalau kamu suka fiksi yang mengajak merenung tentang pilihan hidup.",
-    },
-    DEFAULT_RECOMMENDED_BOOKS[1],
-  ],
-  business: [
-    {
-      isbn: "9780307887894",
-      title: "The Lean Startup",
-      author: "Eric Ries",
-      genre: "Business",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780307887894.jpg",
-      reason: "Untuk pembaca yang sedang belajar membangun ide, menguji pasar, dan bergerak lebih ramping.",
-    },
-    DEFAULT_RECOMMENDED_BOOKS[0],
-    DEFAULT_RECOMMENDED_BOOKS[3],
-  ],
-  children_books: [
-    {
-      isbn: "9780060256654",
-      title: "The Giving Tree",
-      author: "Shel Silverstein",
-      genre: "Children Books",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780060256654.jpg",
-      reason: "Pilihan hangat untuk dibaca bersama anak dan membuka obrolan sederhana tentang kasih.",
-    },
-    {
-      isbn: "9780394800011",
-      title: "The Cat in the Hat",
-      author: "Dr. Seuss",
-      genre: "Children Books",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780394800011.jpg",
-      reason: "Bacaan ringan dan playful untuk membangun kebiasaan membaca anak dengan suasana menyenangkan.",
-    },
-    {
-      isbn: "9780064431781",
-      title: "Where the Wild Things Are",
-      author: "Maurice Sendak",
-      genre: "Children Books",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780064431781.jpg",
-      reason: "Cocok untuk anak yang suka imajinasi besar dan cerita penuh petualangan.",
-    },
-  ],
-  gift_ideas: [
-    DEFAULT_RECOMMENDED_BOOKS[0],
-    DEFAULT_RECOMMENDED_BOOKS[2],
-    {
-      isbn: "9780525559474",
-      title: "The Midnight Library",
-      author: "Matt Haig",
-      genre: "Gift idea",
-      coverUrl:
-        "https://storage.googleapis.com/du-prd/books/images/9780525559474.jpg",
-      reason: "Hadiah fiksi reflektif untuk teman yang suka cerita hangat dan bermakna.",
-    },
-  ],
-};
+function getPreferredGenreLabels(genres?: string[] | null): string[] {
+  if (!Array.isArray(genres)) {
+    return [];
+  }
+
+  return genres
+    .map((genre) => genre.trim())
+    .filter(Boolean)
+    .map((genre) => GENRE_LABELS[genre] ?? toReadableGenreLabel(genre))
+    .slice(0, 4);
+}
 
 function getFirstName(fullName: string): string {
   const trimmed = fullName.trim();
@@ -336,67 +215,90 @@ function normalizeStore(raw: Record<string, unknown>): StoreCardData | null {
   };
 }
 
-function pickUniqueBooks(books: RecommendedBook[], limit = 6): RecommendedBook[] {
-  const seen = new Set<string>();
-  const unique: RecommendedBook[] = [];
+function normalizeRecommendedBook(raw: Record<string, unknown>): RecommendedBook | null {
+  const isbn = readString(raw.isbn_13);
+  const title = readString(raw.title);
 
-  for (const book of books) {
-    if (seen.has(book.isbn)) {
-      continue;
-    }
-
-    seen.add(book.isbn);
-    unique.push(book);
-
-    if (unique.length >= limit) {
-      break;
-    }
+  if (!isbn || !title) {
+    return null;
   }
 
-  return unique;
+  const authorsRaw = raw.authors;
+  const authors = Array.isArray(authorsRaw)
+    ? authorsRaw.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+
+  const categoriesRaw = raw.categories;
+  const categories = Array.isArray(categoriesRaw)
+    ? categoriesRaw.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+
+  const channelsRaw = raw.purchase_channels;
+  const purchaseChannels = Array.isArray(channelsRaw)
+    ? channelsRaw.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+
+  return {
+    id: readNumber(raw.id) ?? 0,
+    isbn,
+    title,
+    author: readString(raw.author_label, authors[0] ?? "Penulis belum tersedia"),
+    genre: readString(raw.category_internal, categories[0] ?? "Data internal"),
+    coverUrl: readString(raw.cover_url) || null,
+    reason: readString(raw.reason, "Buku ini muncul dari data internal Lighterracy yang cocok dengan Reading DNA kamu."),
+    sourceLabel: readString(raw.source_label, "Data Lighterracy"),
+    purchaseChannels,
+  };
 }
 
-function getPreferredGenreLabels(favoriteGenres: string[]): string[] {
-  return favoriteGenres
-    .map((genre) => GENRE_LABELS[genre] ?? genre)
-    .filter((label) => label.trim().length > 0);
-}
+async function fetchInternalRecommendations(): Promise<RecommendationStateData> {
+  const response = await apiFetchWithAuth("/api/me/recommendations?limit=8", {
+    method: "GET",
+  });
 
-function getPersonalizedBooks(readingDnaStatus: ReadingDnaStatus | null): RecommendedBook[] {
-  const favoriteGenres = readingDnaStatus?.favoriteGenres ?? [];
-
-  if (!readingDnaStatus?.hasProfile || favoriteGenres.length === 0) {
-    return DEFAULT_RECOMMENDED_BOOKS;
+  if (!response.ok) {
+    throw new Error("Rekomendasi internal belum bisa dimuat.");
   }
 
-  const booksFromGenres = favoriteGenres.flatMap(
-    (genre) => RECOMMENDED_BOOKS_BY_GENRE[genre] ?? [],
-  );
+  const data = (await response.json()) as InternalRecommendationResponse;
+  const books = Array.isArray(data.books)
+    ? data.books
+        .filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
+        .map(normalizeRecommendedBook)
+        .filter((item): item is RecommendedBook => item !== null)
+    : [];
 
-  return pickUniqueBooks([...booksFromGenres, ...DEFAULT_RECOMMENDED_BOOKS]);
+  return {
+    books,
+    sourceLabel: data.source_label || "Data Lighterracy",
+    strategy: data.strategy,
+    emptyTitle: data.empty_state?.title ?? "Belum ada rekomendasi internal yang cocok.",
+    emptyMessage:
+      data.empty_state?.message ??
+      "Lightcy tidak akan mengisi ruang ini dengan buku random. Rekomendasi akan muncul setelah data internal yang cocok tersedia.",
+  };
 }
 
 function getRecommendationIntro(readingDnaStatus: ReadingDnaStatus | null): string {
   if (!readingDnaStatus?.hasProfile) {
-    return "Nanti carousel ini mengikuti genre favoritmu. Isi Reading DNA dulu supaya Lightcy bisa memilih lebih dekat dengan seleramu.";
+    return "Isi Reading DNA dulu supaya Lightcy bisa memilih dari data buku internal Lighterracy, bukan dari daftar random.";
   }
 
   const genreLabels = getPreferredGenreLabels(readingDnaStatus.favoriteGenres);
-  const readerType = readingDnaStatus.readerTypeLabel ?? "teman baca";
 
   if (genreLabels.length === 0) {
-    return `Lightcy sudah mengenalmu sebagai ${readerType}. Tambahkan genre favorit supaya pilihan buku makin tajam.`;
+    return "Lightcy sudah mulai mengenalmu, tapi genre favorit belum cukup jelas untuk memilih buku dari data internal.";
   }
 
-  return `Dipilih dari Reading DNA kamu: ${genreLabels.slice(0, 3).join(", ")}. Lightcy mulai belajar memilih buku yang lebih dekat denganmu.`;
+  return `Dipilih hanya dari data internal Lighterracy berdasarkan Reading DNA kamu: ${genreLabels.slice(0, 3).join(", ")}.`;
 }
 
 function getRecommendationBadge(readingDnaStatus: ReadingDnaStatus | null): string {
   if (!readingDnaStatus?.hasProfile) {
-    return "Preview personalisasi";
+    return "Menunggu Reading DNA";
   }
 
-  return readingDnaStatus.readerTypeLabel ?? "Reading DNA aktif";
+  return readingDnaStatus.readerTypeLabel ?? "Data internal";
 }
 
 function LoadingView() {
@@ -532,17 +434,38 @@ function ReadingProgress() {
   );
 }
 
-interface BookRecommendationCarouselProps {
-  readingDnaStatus: ReadingDnaStatus | null;
+function BookCover({ book }: { book: RecommendedBook }) {
+  if (book.coverUrl) {
+    return (
+      <div
+        className="aspect-[3/4] rounded-xl bg-zinc-100 bg-cover bg-center shadow-inner"
+        style={{ backgroundImage: `url(${book.coverUrl})` }}
+        aria-label={`Cover ${book.title}`}
+      />
+    );
+  }
+
+  return (
+    <div className="flex aspect-[3/4] items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50 px-3 text-center text-xs font-semibold leading-5 text-amber-800 shadow-inner">
+      Cover internal belum tersedia
+    </div>
+  );
 }
 
-function BookRecommendationCarousel({ readingDnaStatus }: BookRecommendationCarouselProps) {
-  const books = useMemo(
-    () => getPersonalizedBooks(readingDnaStatus),
-    [readingDnaStatus],
-  );
+interface BookRecommendationCarouselProps {
+  readingDnaStatus: ReadingDnaStatus | null;
+  recommendations: RecommendationStateData | null;
+  recommendationState: DataState;
+}
+
+function BookRecommendationCarousel({
+  readingDnaStatus,
+  recommendations,
+  recommendationState,
+}: BookRecommendationCarouselProps) {
   const intro = getRecommendationIntro(readingDnaStatus);
   const badge = getRecommendationBadge(readingDnaStatus);
+  const books = recommendations?.books ?? [];
 
   return (
     <Card className="border-[#eadfce] bg-white shadow-sm">
@@ -562,35 +485,77 @@ function BookRecommendationCarousel({ readingDnaStatus }: BookRecommendationCaro
         </span>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
-          {books.map((book) => (
-            <article
-              key={book.isbn}
-              className="min-w-[190px] max-w-[190px] rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm"
-            >
-              <Link href={`/isbn/${book.isbn}`} className="block">
-                <div
-                  className="aspect-[3/4] rounded-xl bg-zinc-100 bg-cover bg-center shadow-inner"
-                  style={{ backgroundImage: `url(${book.coverUrl})` }}
-                  aria-label={`Cover ${book.title}`}
-                />
-                <p className="mt-3 line-clamp-2 text-sm font-semibold text-zinc-950">
-                  {book.title}
-                </p>
-              </Link>
-              <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{book.author}</p>
-              <span className="mt-2 inline-flex rounded-full bg-white px-2 py-1 text-[11px] text-[#0e2a47] ring-1 ring-zinc-200">
-                {book.genre}
-              </span>
-              <p className="mt-2 line-clamp-3 text-xs leading-5 text-zinc-600">{book.reason}</p>
-            </article>
-          ))}
-        </div>
-        {readingDnaStatus?.hasProfile ? (
-          <p className="mt-3 text-xs leading-5 text-zinc-500">
-            Ini masih rekomendasi awal berbasis genre, belum AI penuh. Nanti Lightcy akan makin tajam setelah Rak Saya dan riwayat bacaan mulai terisi.
-          </p>
+        {recommendationState === "loading" ? (
+          <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="min-w-[190px] max-w-[190px] rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm"
+              >
+                <div className="aspect-[3/4] animate-pulse rounded-xl bg-zinc-100" />
+                <div className="mt-3 h-4 animate-pulse rounded bg-zinc-100" />
+                <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
+              </div>
+            ))}
+          </div>
         ) : null}
+
+        {recommendationState !== "loading" && books.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
+            {books.map((book) => (
+              <article
+                key={book.isbn}
+                className="min-w-[190px] max-w-[190px] rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm"
+              >
+                <Link href={`/isbn/${book.isbn}`} className="block">
+                  <BookCover book={book} />
+                  <p className="mt-3 line-clamp-2 text-sm font-semibold text-zinc-950">
+                    {book.title}
+                  </p>
+                </Link>
+                <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{book.author}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className="inline-flex rounded-full bg-white px-2 py-1 text-[11px] text-[#0e2a47] ring-1 ring-zinc-200">
+                    {book.genre}
+                  </span>
+                  <span className="inline-flex rounded-full bg-emerald-50 px-2 py-1 text-[11px] text-emerald-700 ring-1 ring-emerald-100">
+                    {book.sourceLabel}
+                  </span>
+                </div>
+                <p className="mt-2 line-clamp-3 text-xs leading-5 text-zinc-600">{book.reason}</p>
+                {book.purchaseChannels.length > 0 ? (
+                  <p className="mt-2 text-[11px] text-zinc-500">
+                    Kanal: {book.purchaseChannels.join(", ")}
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        {recommendationState !== "loading" && books.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/60 p-5 text-sm leading-6 text-amber-900">
+            <p className="font-semibold text-amber-950">
+              {recommendations?.emptyTitle ?? "Belum ada rekomendasi internal yang cocok."}
+            </p>
+            <p className="mt-1">
+              {recommendations?.emptyMessage ??
+                "Lightcy tidak akan mengisi ruang ini dengan buku random. Rekomendasi akan muncul setelah data internal yang cocok tersedia."}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button asChild size="sm" className="bg-[#0e2a47] text-white hover:bg-[#163a5f]">
+                <Link href="/me/reading-dna">Atur Reading DNA</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
+                <Link href="/">Cari buku manual</Link>
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        <p className="mt-3 text-xs leading-5 text-zinc-500">
+          Rekomendasi di ruang ini hanya boleh berasal dari data internal Lighterracy. Google Books hanya dipakai untuk lookup/enrichment saat user scan ISBN acak.
+        </p>
       </CardContent>
     </Card>
   );
@@ -921,16 +886,19 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
   const [promos, setPromos] = useState<PromoCardData[]>([]);
   const [stores, setStores] = useState<StoreCardData[]>([]);
   const [readingDnaStatus, setReadingDnaStatus] = useState<ReadingDnaStatus | null>(null);
+  const [recommendations, setRecommendations] = useState<RecommendationStateData | null>(null);
+  const [recommendationState, setRecommendationState] = useState<DataState>("loading");
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadDashboardData() {
       try {
-        const [promosResponse, storesResponse, readingDnaResponse] = await Promise.all([
+        const [promosResponse, storesResponse, readingDnaResponse, recommendationsResponse] = await Promise.all([
           fetch("/data/promos.json", { cache: "no-store" }),
           fetch("/data/stores.json", { cache: "no-store" }),
           fetchReadingDna().catch(() => null),
+          fetchInternalRecommendations().catch(() => null),
         ]);
 
         if (!promosResponse.ok || !storesResponse.ok) {
@@ -973,6 +941,8 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
               }
             : null,
         );
+        setRecommendations(recommendationsResponse);
+        setRecommendationState(recommendationsResponse ? "ready" : "error");
         setDataState("ready");
       } catch {
         if (cancelled) {
@@ -982,6 +952,8 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         setPromos([]);
         setStores([]);
         setReadingDnaStatus(null);
+        setRecommendations(null);
+        setRecommendationState("error");
         setDataState("error");
       }
     }
@@ -999,7 +971,7 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         <ReadingHero user={user} />
         <QuickActions />
         <ReadingProgress />
-        <BookRecommendationCarousel readingDnaStatus={readingDnaStatus} />
+        <BookRecommendationCarousel readingDnaStatus={readingDnaStatus} recommendations={recommendations} recommendationState={recommendationState} />
         <PromoSection promos={promos} dataState={dataState} />
         <NearbyStoresSection stores={stores} dataState={dataState} />
         <FeatureCards readingDnaStatus={readingDnaStatus} />
