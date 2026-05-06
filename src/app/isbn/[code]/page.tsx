@@ -91,7 +91,7 @@ export default async function IsbnPage({
 
   // Kalau error / not found → kirim book=null ke modal (UI fallback standar)
   if (!data || data.found !== true) {
-    return <BookDetailModal open book={null} />;
+    return <BookDetailModal open book={null} purchaseIsbn={code} />;
   }
 
   const b = data.book;

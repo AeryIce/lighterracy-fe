@@ -243,7 +243,69 @@ export default function BookDetailModal({
   }, [open]);
 
   // Early return hanya untuk render (hooks sudah di atas)
-  if (!open || !book) return null;
+  if (!open) return null;
+
+  if (!book) {
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-[70] bg-black/45"
+        onClick={handleClose}
+      >
+        <div
+          className="h-full w-full overflow-y-auto overscroll-contain p-3 md:p-6 [-webkit-overflow-scrolling:touch]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col justify-between rounded-2xl bg-white p-5 shadow-xl md:p-7">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-700">
+                Buku belum ditemukan
+              </p>
+              <h2 className="mt-2 text-2xl font-black leading-tight text-neutral-950">
+                Lightcy belum bisa menampilkan detail buku ini.
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
+                Bisa jadi data Google Books belum tersedia atau sedang gagal dimuat.
+                Tapi kalau ISBN ini punya link pembelian di data internal Lighterracy,
+                pintu belanjanya tetap akan muncul di bawah.
+              </p>
+
+              {purchaseLookupIsbn ? (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-neutral-700">
+                  ISBN yang dicek: <span className="font-black text-neutral-950">{purchaseLookupIsbn}</span>
+                </div>
+              ) : null}
+
+              <PurchaseLinksPanel
+                isbn={purchaseLookupIsbn}
+                sourcePage="book_detail"
+              />
+            </div>
+
+            <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-neutral-100 pt-4">
+              {purchaseLookupIsbn ? (
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard?.writeText(purchaseLookupIsbn)}
+                  className="rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-200"
+                >
+                  Copy ISBN
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleClose}
+                className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
