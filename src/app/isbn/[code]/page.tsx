@@ -5,7 +5,7 @@ import BookDetailModal, { type BookFull } from "@/components/lighterracy/BookDet
 type ParamsPromise = Promise<{ code: string }>;
 export const dynamic = "force-dynamic";
 
-type BookSource = "internal" | "external_google" | "not_found" | string;
+type BookSource = "internal" | "external_google" | "external_google_seed" | "not_found" | string;
 
 type BookDetailPayload = {
   id?: string | number | null;
@@ -37,6 +37,9 @@ type BookDetailPayload = {
   data_source?: string | null;
   data_source_label?: string | null;
   can_recommend?: boolean | null;
+  is_recommendable?: boolean | null;
+  data_origin?: string | null;
+  curation_status?: string | null;
   average_rating?: number | null;
   ratings_count?: number | null;
   dimensions?: { height?: string; width?: string; thickness?: string } | null;
@@ -48,6 +51,7 @@ type BookDetailResponse = {
   source?: BookSource;
   source_label?: string;
   can_recommend?: boolean;
+  show_purchase_links?: boolean;
   is_internal?: boolean;
   book?: BookDetailPayload | null;
   external_enrichment?: unknown;
@@ -153,7 +157,8 @@ function pickDescription(book: BookDetailPayload, source: BookSource) {
 
 function mapBookDetail(response: BookDetailResponse, requestedIsbn: string): PageBookResult {
   const source = response.source ?? "not_found";
-  const isInternal = source === "internal" || response.is_internal === true;
+  const isCuratedInternal =
+    source === "internal" && (response.can_recommend === true || response.is_internal === true);
   const b = response.book;
 
   if (!b?.title) {
@@ -204,13 +209,13 @@ function mapBookDetail(response: BookDetailResponse, requestedIsbn: string): Pag
         thumbnail: cover,
         smallThumbnail: cover,
       },
-      dataSource: isInternal ? "internal" : "google",
+      dataSource: isCuratedInternal ? "internal" : "google",
     },
     source,
     sourceLabel:
-      response.source_label ?? (isInternal ? "Data Lighterracy" : "Info eksternal"),
+      response.source_label ?? (isCuratedInternal ? "Data Lighterracy" : "Info eksternal"),
     canRecommend: response.can_recommend === true || b.can_recommend === true,
-    showPurchaseLinks: isInternal,
+    showPurchaseLinks: response.show_purchase_links === true,
   };
 }
 
