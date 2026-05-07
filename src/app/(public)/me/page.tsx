@@ -65,6 +65,50 @@ interface RecommendationStateData {
   emptyMessage: string;
 }
 
+interface BookshelfItemData {
+  id: number;
+  isbn: string;
+  title: string;
+  authorText: string;
+  coverUrl: string | null;
+  shelfStatus: string;
+  savedAt: string | null;
+}
+
+interface BookshelfResponse {
+  ok: boolean;
+  total: number;
+  items: Array<Record<string, unknown>>;
+}
+
+interface BookshelfStateData {
+  total: number;
+  items: BookshelfItemData[];
+}
+
+interface ReadingTrailItemData {
+  id: number;
+  eventType: string;
+  eventLabel: string;
+  isbn: string | null;
+  title: string;
+  authorText: string;
+  coverUrl: string | null;
+  sourcePage: string | null;
+  occurredAt: string | null;
+}
+
+interface ReadingEventsResponse {
+  ok: boolean;
+  total: number;
+  items: Array<Record<string, unknown>>;
+}
+
+interface ReadingTrailStateData {
+  total: number;
+  items: ReadingTrailItemData[];
+}
+
 interface PromoCardData {
   id: string;
   title: string;
@@ -87,25 +131,6 @@ interface StoreCardData {
 
 interface StoreWithDistance extends StoreCardData {
   distanceKm: number | null;
-}
-
-interface ReadingEventData {
-  id: number;
-  eventType: string;
-  eventLabel: string;
-  bookId: number | null;
-  isbn13: string;
-  title: string;
-  authorText: string;
-  coverUrl: string | null;
-  sourcePage: string | null;
-  occurredAt: string | null;
-}
-
-interface ReadingEventsResponse {
-  ok: boolean;
-  total: number;
-  items: Array<Record<string, unknown>>;
 }
 
 const GENRE_LABELS: Record<string, string> = {
@@ -270,95 +295,6 @@ function normalizeRecommendedBook(raw: Record<string, unknown>): RecommendedBook
   };
 }
 
-function fallbackEventLabel(eventType: string): string {
-  switch (eventType) {
-    case "isbn_scanned":
-      return "Scan ISBN";
-    case "book_detail_opened":
-      return "Buka detail buku";
-    case "book_saved":
-      return "Simpan ke Rak Saya";
-    case "bookshelf_status_changed":
-      return "Ubah status Rak Saya";
-    case "book_marked_read":
-      return "Tandai sudah dibaca";
-    case "search_performed":
-      return "Pencarian buku";
-    case "search_no_result":
-      return "Pencarian belum ada hasil";
-    default:
-      return "Aktivitas bacaan";
-  }
-}
-
-function normalizeReadingEvent(raw: Record<string, unknown>): ReadingEventData | null {
-  const id = readNumber(raw.id);
-  const eventType = readString(raw.event_type);
-
-  if (id === null || !eventType) {
-    return null;
-  }
-
-  const isbn = readString(raw.isbn_13, readString(raw.isbn));
-  const title = readString(raw.title, isbn ? `Buku ISBN ${isbn}` : "Buku tanpa judul");
-
-  return {
-    id,
-    eventType,
-    eventLabel: readString(raw.event_label, fallbackEventLabel(eventType)),
-    bookId: readNumber(raw.book_id),
-    isbn13: isbn,
-    title,
-    authorText: readString(raw.author_text, ""),
-    coverUrl: readString(raw.cover_url) || null,
-    sourcePage: readString(raw.source_page) || null,
-    occurredAt: readString(raw.occurred_at) || null,
-  };
-}
-
-function formatReadingEventTime(value: string | null): string {
-  if (!value) {
-    return "baru saja";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "baru saja";
-  }
-
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-async function fetchReadingEvents(): Promise<ReadingEventData[]> {
-  const response = await apiFetchWithAuth("/api/me/reading-events?limit=8", {
-    method: "GET",
-  });
-
-  if (response.status === 401) {
-    clearSessionTokenFromBrowser();
-    throw new Error("Sesi masuk sudah berakhir.");
-  }
-
-  if (!response.ok) {
-    throw new Error("Jejak Bacaan belum bisa dimuat.");
-  }
-
-  const data = (await response.json()) as ReadingEventsResponse;
-
-  return Array.isArray(data.items)
-    ? data.items
-        .filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
-        .map(normalizeReadingEvent)
-        .filter((item): item is ReadingEventData => item !== null)
-    : [];
-}
-
 async function fetchInternalRecommendations(): Promise<RecommendationStateData> {
   const response = await apiFetchWithAuth("/api/me/recommendations?limit=8", {
     method: "GET",
@@ -407,6 +343,133 @@ function getRecommendationBadge(readingDnaStatus: ReadingDnaStatus | null): stri
   }
 
   return readingDnaStatus.readerTypeLabel ?? "Data internal";
+}
+
+function getShelfStatusLabel(status: string): string {
+  switch (status) {
+    case "want_to_read":
+      return "Ingin Dibaca";
+    case "considering":
+      return "Sedang Dipertimbangkan";
+    case "reading":
+      return "Sedang Dibaca";
+    case "read":
+      return "Sudah Dibaca";
+    case "favorite":
+      return "Favorit";
+    case "gift":
+      return "Untuk Hadiah";
+    default:
+      return "Tersimpan";
+  }
+}
+
+function normalizeBookshelfItem(raw: Record<string, unknown>): BookshelfItemData | null {
+  const isbn = readString(raw.isbn_13);
+
+  if (!isbn) {
+    return null;
+  }
+
+  const title = readString(raw.title, `Buku ISBN ${isbn}`);
+
+  return {
+    id: readNumber(raw.id) ?? 0,
+    isbn,
+    title,
+    authorText: readString(raw.author_text, "Penulis belum tersedia"),
+    coverUrl: readString(raw.cover_url) || null,
+    shelfStatus: readString(raw.shelf_status, "want_to_read"),
+    savedAt: readString(raw.saved_at, "") || null,
+  };
+}
+
+async function fetchBookshelf(): Promise<BookshelfStateData> {
+  const response = await apiFetchWithAuth("/api/me/bookshelf", {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error("Rak Saya belum bisa dimuat.");
+  }
+
+  const data = (await response.json()) as BookshelfResponse;
+  const items = Array.isArray(data.items)
+    ? data.items
+        .filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
+        .map(normalizeBookshelfItem)
+        .filter((item): item is BookshelfItemData => item !== null)
+    : [];
+
+  return {
+    total: typeof data.total === "number" ? data.total : items.length,
+    items,
+  };
+}
+
+function normalizeReadingTrailItem(raw: Record<string, unknown>): ReadingTrailItemData | null {
+  const id = readNumber(raw.id) ?? 0;
+  const eventType = readString(raw.event_type, "activity");
+  const eventLabel = readString(raw.event_label, "Aktivitas bacaan");
+  const isbn = readString(raw.isbn_13) || null;
+  const title = readString(raw.title, isbn ? `Buku ISBN ${isbn}` : "Buku belum berjudul");
+
+  if (id <= 0) {
+    return null;
+  }
+
+  return {
+    id,
+    eventType,
+    eventLabel,
+    isbn,
+    title,
+    authorText: readString(raw.author_text, "Penulis belum tersedia"),
+    coverUrl: readString(raw.cover_url) || null,
+    sourcePage: readString(raw.source_page) || null,
+    occurredAt: readString(raw.occurred_at) || null,
+  };
+}
+
+async function fetchReadingTrail(): Promise<ReadingTrailStateData> {
+  const response = await apiFetchWithAuth("/api/me/reading-events?limit=8", {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error("Jejak Bacaan belum bisa dimuat.");
+  }
+
+  const data = (await response.json()) as ReadingEventsResponse;
+  const items = Array.isArray(data.items)
+    ? data.items
+        .filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
+        .map(normalizeReadingTrailItem)
+        .filter((item): item is ReadingTrailItemData => item !== null)
+    : [];
+
+  return {
+    total: typeof data.total === "number" ? data.total : items.length,
+    items,
+  };
+}
+
+function formatReadingEventTime(value: string | null): string {
+  if (!value) {
+    return "Baru saja";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Baru saja";
+  }
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function LoadingView() {
@@ -494,9 +557,15 @@ function ReadingHero({ user }: HeroProps) {
 
 function QuickActions() {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-3 sm:grid-cols-6">
       <Button asChild className="bg-[#0e2a47] text-white hover:bg-[#163a5f]">
         <Link href="/">🔎 Cari buku</Link>
+      </Button>
+      <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
+        <Link href="#rak-saya">📚 Rak Saya</Link>
+      </Button>
+      <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
+        <Link href="#jejak-bacaan">🧭 Jejak Bacaan</Link>
       </Button>
       <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
         <Link href="/promos">🔥 Lihat promo</Link>
@@ -506,9 +575,6 @@ function QuickActions() {
       </Button>
       <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
         <Link href="/me/reading-dna">🌱 Atur minat</Link>
-      </Button>
-      <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
-        <Link href="#reading-trail">👣 Jejak</Link>
       </Button>
     </div>
   );
@@ -672,91 +738,197 @@ function BookRecommendationCarousel({
   );
 }
 
-interface ReadingTrailSectionProps {
-  events: ReadingEventData[];
-  dataState: DataState;
+interface BookshelfSectionProps {
+  bookshelf: BookshelfStateData | null;
+  bookshelfState: DataState;
 }
 
-function ReadingTrailSection({ events, dataState }: ReadingTrailSectionProps) {
+function BookshelfCover({ item }: { item: BookshelfItemData }) {
+  if (item.coverUrl) {
+    return (
+      <div
+        className="h-24 w-16 flex-none rounded-xl bg-zinc-100 bg-cover bg-center shadow-inner"
+        style={{ backgroundImage: `url(${item.coverUrl})` }}
+        aria-label={`Cover ${item.title}`}
+      />
+    );
+  }
+
   return (
-    <Card id="reading-trail" className="border-[#eadfce] bg-white shadow-sm">
+    <div className="flex h-24 w-16 flex-none items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50 px-2 text-center text-[10px] font-semibold leading-4 text-amber-800">
+      Cover
+    </div>
+  );
+}
+
+function BookshelfSection({ bookshelf, bookshelfState }: BookshelfSectionProps) {
+  const items = bookshelf?.items ?? [];
+
+  return (
+    <Card id="rak-saya" className="border-[#eadfce] bg-white shadow-sm scroll-mt-24">
+      <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <CardTitle>Rak Saya</CardTitle>
+          <CardDescription className="leading-6">
+            Buku yang kamu simpan dari halaman detail akan muncul di sini. Ini mulai jadi jejak bacaan yang kamu pilih sendiri.
+          </CardDescription>
+        </div>
+        <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+          {bookshelf?.total ?? 0} buku tersimpan
+        </span>
+      </CardHeader>
+      <CardContent>
+        {bookshelfState === "loading" ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="h-32 animate-pulse rounded-2xl bg-zinc-100" />
+            <div className="h-32 animate-pulse rounded-2xl bg-zinc-100" />
+          </div>
+        ) : null}
+
+        {bookshelfState !== "loading" && items.length > 0 ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            {items.slice(0, 6).map((item) => (
+              <Link
+                key={`${item.isbn}-${item.id}`}
+                href={`/isbn/${item.isbn}`}
+                className="group flex gap-3 rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <BookshelfCover item={item} />
+                <div className="min-w-0 flex-1">
+                  <span className="inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700">
+                    {getShelfStatusLabel(item.shelfStatus)}
+                  </span>
+                  <p className="mt-2 line-clamp-2 text-sm font-semibold text-zinc-950 group-hover:text-[#0e2a47]">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{item.authorText}</p>
+                  <p className="mt-2 text-[11px] text-zinc-500">ISBN {item.isbn}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : null}
+
+        {bookshelfState !== "loading" && items.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/60 p-5 text-sm leading-6 text-amber-900">
+            <p className="font-semibold text-amber-950">Rak Saya masih kosong.</p>
+            <p className="mt-1">
+              Buka detail buku dari scan atau rekomendasi, lalu klik “Simpan ke Rak Saya”. Lightcy akan pakai sinyal ini untuk memahami minat bacaanmu dengan lebih jujur.
+            </p>
+            <Button asChild size="sm" className="mt-3 bg-[#0e2a47] text-white hover:bg-[#163a5f]">
+              <Link href="/">Cari buku pertama</Link>
+            </Button>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+interface ReadingTrailSectionProps {
+  readingTrail: ReadingTrailStateData | null;
+  readingTrailState: DataState;
+}
+
+function ReadingTrailCover({ item }: { item: ReadingTrailItemData }) {
+  if (item.coverUrl) {
+    return (
+      <div
+        className="h-16 w-11 flex-none rounded-lg bg-zinc-100 bg-cover bg-center shadow-inner"
+        style={{ backgroundImage: `url(${item.coverUrl})` }}
+        aria-label={`Cover ${item.title}`}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-16 w-11 flex-none items-center justify-center rounded-lg border border-dashed border-amber-200 bg-amber-50 px-1 text-center text-[9px] font-semibold leading-3 text-amber-800">
+      Buku
+    </div>
+  );
+}
+
+function ReadingTrailSection({ readingTrail, readingTrailState }: ReadingTrailSectionProps) {
+  const items = readingTrail?.items ?? [];
+
+  return (
+    <Card id="jejak-bacaan" className="border-[#eadfce] bg-white shadow-sm scroll-mt-24">
       <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <CardTitle>Jejak Bacaan</CardTitle>
           <CardDescription className="leading-6">
-            Aktivitas yang kamu lakukan sendiri di Lighterracy. Ini nanti jadi dasar personalisasi yang transparan.
+            Aktivitas yang kamu lakukan sendiri: buka detail, scan, simpan buku, dan perubahan Rak Saya. Ini cikal bakal “Data Saya”.
           </CardDescription>
         </div>
-        <span className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
-          {events.length} aktivitas
+        <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+          {readingTrail?.total ?? 0} aktivitas terakhir
         </span>
       </CardHeader>
       <CardContent>
-        {dataState === "loading" ? (
+        {readingTrailState === "loading" ? (
           <div className="space-y-3">
-            {[0, 1, 2].map((item) => (
-              <div key={item} className="h-20 animate-pulse rounded-2xl bg-zinc-100" />
-            ))}
+            <div className="h-20 animate-pulse rounded-2xl bg-zinc-100" />
+            <div className="h-20 animate-pulse rounded-2xl bg-zinc-100" />
           </div>
         ) : null}
 
-        {dataState === "error" ? (
-          <div className="rounded-2xl border border-red-100 bg-red-50 p-5 text-sm leading-6 text-red-700">
-            Jejak Bacaan belum bisa dimuat. Kalau tabelnya sudah berisi, biasanya FE sedang gagal membaca endpoint atau token sesi tidak ikut terkirim.
-          </div>
-        ) : null}
-
-        {dataState === "ready" && events.length > 0 ? (
+        {readingTrailState !== "loading" && items.length > 0 ? (
           <div className="space-y-3">
-            {events.map((event) => (
-              <article
-                key={event.id}
-                className="flex gap-3 rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm"
-              >
-                {event.coverUrl ? (
-                  <div
-                    className="h-16 w-12 shrink-0 rounded-lg bg-zinc-100 bg-cover bg-center shadow-inner"
-                    style={{ backgroundImage: `url(${event.coverUrl})` }}
-                    aria-label={`Cover ${event.title}`}
-                  />
-                ) : (
-                  <div className="flex h-16 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-amber-200 bg-amber-50 text-xs text-amber-700">
-                    📖
+            {items.map((item) => {
+              const content = (
+                <>
+                  <ReadingTrailCover item={item} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700">
+                        {item.eventLabel}
+                      </span>
+                      <span className="text-[11px] text-zinc-500">{formatReadingEventTime(item.occurredAt)}</span>
+                    </div>
+                    <p className="mt-2 line-clamp-1 text-sm font-semibold text-zinc-950 group-hover:text-[#0e2a47]">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{item.authorText}</p>
+                    {item.isbn ? <p className="mt-1 text-[11px] text-zinc-500">ISBN {item.isbn}</p> : null}
                   </div>
-                )}
+                </>
+              );
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-amber-200 bg-white px-2 py-1 text-[11px] font-semibold text-amber-800">
-                      {event.eventLabel}
-                    </span>
-                    <span className="text-[11px] text-zinc-500">
-                      {formatReadingEventTime(event.occurredAt)}
-                    </span>
-                  </div>
-                  <Link
-                    href={event.isbn13 ? `/isbn/${event.isbn13}` : "/"}
-                    className="mt-2 block line-clamp-1 font-semibold text-zinc-950 hover:text-[#0e2a47]"
-                  >
-                    {event.title}
-                  </Link>
-                  {event.authorText ? (
-                    <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{event.authorText}</p>
-                  ) : null}
-                  {event.isbn13 ? (
-                    <p className="mt-1 text-[11px] text-zinc-400">ISBN {event.isbn13}</p>
-                  ) : null}
+              return item.isbn ? (
+                <Link
+                  key={`${item.id}-${item.eventType}`}
+                  href={`/isbn/${item.isbn}`}
+                  className="group flex gap-3 rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div
+                  key={`${item.id}-${item.eventType}`}
+                  className="flex gap-3 rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm"
+                >
+                  {content}
                 </div>
-              </article>
-            ))}
+              );
+            })}
           </div>
         ) : null}
 
-        {dataState === "ready" && events.length === 0 ? (
+        {readingTrailState === "error" ? (
+          <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/70 p-5 text-sm leading-6 text-red-900">
+            <p className="font-semibold text-red-950">Jejak Bacaan belum bisa dimuat.</p>
+            <p className="mt-1">
+              Cek endpoint <code className="rounded bg-white px-1 py-0.5 text-[11px]">/api/me/reading-events</code> di Network tab. Kalau statusnya 500, biasanya migration tabel event belum jalan di environment itu.
+            </p>
+          </div>
+        ) : null}
+
+        {readingTrailState !== "loading" && readingTrailState !== "error" && items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/60 p-5 text-sm leading-6 text-amber-900">
             <p className="font-semibold text-amber-950">Jejak Bacaan masih kosong.</p>
             <p className="mt-1">
-              Coba cari ISBN, buka detail buku, atau simpan buku ke Rak Saya. Aktivitas yang kamu lakukan sendiri akan muncul di sini.
+              Mulai dari scan/buka detail buku. Aktivitas ini hanya tumbuh dari aksi yang kamu lakukan di Lighterracy.
             </p>
           </div>
         ) : null}
@@ -982,9 +1154,10 @@ function NearbyStoresSection({ stores, dataState }: NearbyStoresSectionProps) {
 
 interface FeatureCardsProps {
   readingDnaStatus: ReadingDnaStatus | null;
+  shelfTotal: number;
 }
 
-function FeatureCards({ readingDnaStatus }: FeatureCardsProps) {
+function FeatureCards({ readingDnaStatus, shelfTotal }: FeatureCardsProps) {
   const hasReadingDna = readingDnaStatus?.hasProfile ?? false;
   const readerType = readingDnaStatus?.readerTypeLabel ?? "Belum diisi";
 
@@ -1026,10 +1199,21 @@ function FeatureCards({ readingDnaStatus }: FeatureCardsProps) {
             Tempat menyimpan buku yang ingin dibaca, dipertimbangkan, atau ditandai sudah selesai.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <span className="inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-600">
-            Pondasi berikutnya
+        <CardContent className="space-y-3">
+          <span
+            className={
+              shelfTotal > 0
+                ? "inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700"
+                : "inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-800"
+            }
+          >
+            {shelfTotal > 0 ? `${shelfTotal} buku tersimpan` : "Siap diisi"}
           </span>
+          <div>
+            <Button asChild size="sm" variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
+              <Link href="#rak-saya">Lihat Rak Saya</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -1092,26 +1276,23 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
   const [readingDnaStatus, setReadingDnaStatus] = useState<ReadingDnaStatus | null>(null);
   const [recommendations, setRecommendations] = useState<RecommendationStateData | null>(null);
   const [recommendationState, setRecommendationState] = useState<DataState>("loading");
-  const [readingEvents, setReadingEvents] = useState<ReadingEventData[]>([]);
-  const [readingEventsState, setReadingEventsState] = useState<DataState>("loading");
+  const [bookshelf, setBookshelf] = useState<BookshelfStateData | null>(null);
+  const [bookshelfState, setBookshelfState] = useState<DataState>("loading");
+  const [readingTrail, setReadingTrail] = useState<ReadingTrailStateData | null>(null);
+  const [readingTrailState, setReadingTrailState] = useState<DataState>("loading");
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadDashboardData() {
       try {
-        const [
-          promosResponse,
-          storesResponse,
-          readingDnaResponse,
-          recommendationsResponse,
-          readingEventsResponse,
-        ] = await Promise.all([
+        const [promosResponse, storesResponse, readingDnaResponse, recommendationsResponse, bookshelfResponse, readingTrailResponse] = await Promise.all([
           fetch("/data/promos.json", { cache: "no-store" }),
           fetch("/data/stores.json", { cache: "no-store" }),
           fetchReadingDna().catch(() => null),
           fetchInternalRecommendations().catch(() => null),
-          fetchReadingEvents().catch(() => null),
+          fetchBookshelf().catch(() => null),
+          fetchReadingTrail().catch(() => null),
         ]);
 
         if (!promosResponse.ok || !storesResponse.ok) {
@@ -1156,8 +1337,10 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         );
         setRecommendations(recommendationsResponse);
         setRecommendationState(recommendationsResponse ? "ready" : "error");
-        setReadingEvents(readingEventsResponse ?? []);
-        setReadingEventsState(readingEventsResponse ? "ready" : "error");
+        setBookshelf(bookshelfResponse);
+        setBookshelfState(bookshelfResponse ? "ready" : "error");
+        setReadingTrail(readingTrailResponse);
+        setReadingTrailState(readingTrailResponse ? "ready" : "error");
         setDataState("ready");
       } catch {
         if (cancelled) {
@@ -1169,8 +1352,10 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         setReadingDnaStatus(null);
         setRecommendations(null);
         setRecommendationState("error");
-        setReadingEvents([]);
-        setReadingEventsState("error");
+        setBookshelf(null);
+        setBookshelfState("error");
+        setReadingTrail(null);
+        setReadingTrailState("error");
         setDataState("error");
       }
     }
@@ -1189,10 +1374,11 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         <QuickActions />
         <ReadingProgress />
         <BookRecommendationCarousel readingDnaStatus={readingDnaStatus} recommendations={recommendations} recommendationState={recommendationState} />
-        <ReadingTrailSection events={readingEvents} dataState={readingEventsState} />
+        <BookshelfSection bookshelf={bookshelf} bookshelfState={bookshelfState} />
+        <ReadingTrailSection readingTrail={readingTrail} readingTrailState={readingTrailState} />
         <PromoSection promos={promos} dataState={dataState} />
         <NearbyStoresSection stores={stores} dataState={dataState} />
-        <FeatureCards readingDnaStatus={readingDnaStatus} />
+        <FeatureCards readingDnaStatus={readingDnaStatus} shelfTotal={bookshelf?.total ?? 0} />
         <LogoutPanel onLogout={onLogout} isLoggingOut={isLoggingOut} />
       </section>
     </main>
