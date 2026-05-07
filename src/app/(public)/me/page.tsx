@@ -343,11 +343,12 @@ function getShelfStatusLabel(status: string): string {
 
 function normalizeBookshelfItem(raw: Record<string, unknown>): BookshelfItemData | null {
   const isbn = readString(raw.isbn_13);
-  const title = readString(raw.title);
 
-  if (!isbn || !title) {
+  if (!isbn) {
     return null;
   }
+
+  const title = readString(raw.title, `Buku ISBN ${isbn}`);
 
   return {
     id: readNumber(raw.id) ?? 0,
