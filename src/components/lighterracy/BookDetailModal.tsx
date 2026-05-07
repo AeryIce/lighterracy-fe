@@ -172,6 +172,7 @@ export default function BookDetailModal({
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<number | null>(null);
+  const detailEventRef = useRef<string | null>(null);
 
   const [lightcyAnswer, setLightcyAnswer] = useState<string | null>(null);
   const [lightcyLoading, setLightcyLoading] = useState(false);
@@ -227,6 +228,40 @@ export default function BookDetailModal({
     : "";
   const source = sourceBadge(book);
   const SourceIcon = source.icon;
+
+  useEffect(() => {
+    if (!open || !book || !purchaseLookupIsbn) {
+      return;
+    }
+
+    const token = getSessionTokenFromBrowser();
+    if (!token) {
+      return;
+    }
+
+    const eventKey = `${purchaseLookupIsbn}:${book.dataSource ?? "unknown"}`;
+    if (detailEventRef.current === eventKey) {
+      return;
+    }
+
+    detailEventRef.current = eventKey;
+
+    void apiFetchWithAuth("/api/me/reading-events", {
+      method: "POST",
+      body: JSON.stringify({
+        event_type: "book_detail_opened",
+        isbn_13: purchaseLookupIsbn,
+        title: book.title,
+        author_text: book.authors?.join(", ") ?? null,
+        source_page: "book_detail",
+        metadata: {
+          data_source: book.dataSource ?? null,
+        },
+      }),
+    }).catch(() => {
+      // Reading Trail is useful, but it should never block the detail modal.
+    });
+  }, [book, open, purchaseLookupIsbn]);
 
   useEffect(() => {
     if (!open || !book || !purchaseLookupIsbn) {

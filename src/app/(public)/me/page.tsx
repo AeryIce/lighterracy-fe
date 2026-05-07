@@ -86,6 +86,29 @@ interface BookshelfStateData {
   items: BookshelfItemData[];
 }
 
+interface ReadingTrailItemData {
+  id: number;
+  eventType: string;
+  eventLabel: string;
+  isbn: string | null;
+  title: string;
+  authorText: string;
+  coverUrl: string | null;
+  sourcePage: string | null;
+  occurredAt: string | null;
+}
+
+interface ReadingEventsResponse {
+  ok: boolean;
+  total: number;
+  items: Array<Record<string, unknown>>;
+}
+
+interface ReadingTrailStateData {
+  total: number;
+  items: ReadingTrailItemData[];
+}
+
 interface PromoCardData {
   id: string;
   title: string;
@@ -384,6 +407,71 @@ async function fetchBookshelf(): Promise<BookshelfStateData> {
   };
 }
 
+function normalizeReadingTrailItem(raw: Record<string, unknown>): ReadingTrailItemData | null {
+  const id = readNumber(raw.id) ?? 0;
+  const eventType = readString(raw.event_type, "activity");
+  const eventLabel = readString(raw.event_label, "Aktivitas bacaan");
+  const isbn = readString(raw.isbn_13) || null;
+  const title = readString(raw.title, isbn ? `Buku ISBN ${isbn}` : "Buku belum berjudul");
+
+  if (id <= 0) {
+    return null;
+  }
+
+  return {
+    id,
+    eventType,
+    eventLabel,
+    isbn,
+    title,
+    authorText: readString(raw.author_text, "Penulis belum tersedia"),
+    coverUrl: readString(raw.cover_url) || null,
+    sourcePage: readString(raw.source_page) || null,
+    occurredAt: readString(raw.occurred_at) || null,
+  };
+}
+
+async function fetchReadingTrail(): Promise<ReadingTrailStateData> {
+  const response = await apiFetchWithAuth("/api/me/reading-events?limit=8", {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error("Jejak Bacaan belum bisa dimuat.");
+  }
+
+  const data = (await response.json()) as ReadingEventsResponse;
+  const items = Array.isArray(data.items)
+    ? data.items
+        .filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
+        .map(normalizeReadingTrailItem)
+        .filter((item): item is ReadingTrailItemData => item !== null)
+    : [];
+
+  return {
+    total: typeof data.total === "number" ? data.total : items.length,
+    items,
+  };
+}
+
+function formatReadingEventTime(value: string | null): string {
+  if (!value) {
+    return "Baru saja";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Baru saja";
+  }
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 function LoadingView() {
   return (
     <main className="min-h-dvh bg-[#f7f7f7] px-4 py-10">
@@ -469,12 +557,15 @@ function ReadingHero({ user }: HeroProps) {
 
 function QuickActions() {
   return (
-    <div className="grid gap-3 sm:grid-cols-5">
+    <div className="grid gap-3 sm:grid-cols-6">
       <Button asChild className="bg-[#0e2a47] text-white hover:bg-[#163a5f]">
         <Link href="/">🔎 Cari buku</Link>
       </Button>
       <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
         <Link href="#rak-saya">📚 Rak Saya</Link>
+      </Button>
+      <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
+        <Link href="#jejak-bacaan">🧭 Jejak Bacaan</Link>
       </Button>
       <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
         <Link href="/promos">🔥 Lihat promo</Link>
@@ -727,6 +818,109 @@ function BookshelfSection({ bookshelf, bookshelfState }: BookshelfSectionProps) 
             <Button asChild size="sm" className="mt-3 bg-[#0e2a47] text-white hover:bg-[#163a5f]">
               <Link href="/">Cari buku pertama</Link>
             </Button>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+interface ReadingTrailSectionProps {
+  readingTrail: ReadingTrailStateData | null;
+  readingTrailState: DataState;
+}
+
+function ReadingTrailCover({ item }: { item: ReadingTrailItemData }) {
+  if (item.coverUrl) {
+    return (
+      <div
+        className="h-16 w-11 flex-none rounded-lg bg-zinc-100 bg-cover bg-center shadow-inner"
+        style={{ backgroundImage: `url(${item.coverUrl})` }}
+        aria-label={`Cover ${item.title}`}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-16 w-11 flex-none items-center justify-center rounded-lg border border-dashed border-amber-200 bg-amber-50 px-1 text-center text-[9px] font-semibold leading-3 text-amber-800">
+      Buku
+    </div>
+  );
+}
+
+function ReadingTrailSection({ readingTrail, readingTrailState }: ReadingTrailSectionProps) {
+  const items = readingTrail?.items ?? [];
+
+  return (
+    <Card id="jejak-bacaan" className="border-[#eadfce] bg-white shadow-sm scroll-mt-24">
+      <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <CardTitle>Jejak Bacaan</CardTitle>
+          <CardDescription className="leading-6">
+            Aktivitas yang kamu lakukan sendiri: buka detail, scan, simpan buku, dan perubahan Rak Saya. Ini cikal bakal “Data Saya”.
+          </CardDescription>
+        </div>
+        <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+          {readingTrail?.total ?? 0} aktivitas terakhir
+        </span>
+      </CardHeader>
+      <CardContent>
+        {readingTrailState === "loading" ? (
+          <div className="space-y-3">
+            <div className="h-20 animate-pulse rounded-2xl bg-zinc-100" />
+            <div className="h-20 animate-pulse rounded-2xl bg-zinc-100" />
+          </div>
+        ) : null}
+
+        {readingTrailState !== "loading" && items.length > 0 ? (
+          <div className="space-y-3">
+            {items.map((item) => {
+              const content = (
+                <>
+                  <ReadingTrailCover item={item} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700">
+                        {item.eventLabel}
+                      </span>
+                      <span className="text-[11px] text-zinc-500">{formatReadingEventTime(item.occurredAt)}</span>
+                    </div>
+                    <p className="mt-2 line-clamp-1 text-sm font-semibold text-zinc-950 group-hover:text-[#0e2a47]">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{item.authorText}</p>
+                    {item.isbn ? <p className="mt-1 text-[11px] text-zinc-500">ISBN {item.isbn}</p> : null}
+                  </div>
+                </>
+              );
+
+              return item.isbn ? (
+                <Link
+                  key={`${item.id}-${item.eventType}`}
+                  href={`/isbn/${item.isbn}`}
+                  className="group flex gap-3 rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div
+                  key={`${item.id}-${item.eventType}`}
+                  className="flex gap-3 rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm"
+                >
+                  {content}
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {readingTrailState !== "loading" && items.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/60 p-5 text-sm leading-6 text-amber-900">
+            <p className="font-semibold text-amber-950">Jejak Bacaan masih kosong.</p>
+            <p className="mt-1">
+              Mulai dari scan/buka detail buku. Aktivitas ini hanya tumbuh dari aksi yang kamu lakukan di Lighterracy.
+            </p>
           </div>
         ) : null}
       </CardContent>
@@ -1075,18 +1269,21 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
   const [recommendationState, setRecommendationState] = useState<DataState>("loading");
   const [bookshelf, setBookshelf] = useState<BookshelfStateData | null>(null);
   const [bookshelfState, setBookshelfState] = useState<DataState>("loading");
+  const [readingTrail, setReadingTrail] = useState<ReadingTrailStateData | null>(null);
+  const [readingTrailState, setReadingTrailState] = useState<DataState>("loading");
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadDashboardData() {
       try {
-        const [promosResponse, storesResponse, readingDnaResponse, recommendationsResponse, bookshelfResponse] = await Promise.all([
+        const [promosResponse, storesResponse, readingDnaResponse, recommendationsResponse, bookshelfResponse, readingTrailResponse] = await Promise.all([
           fetch("/data/promos.json", { cache: "no-store" }),
           fetch("/data/stores.json", { cache: "no-store" }),
           fetchReadingDna().catch(() => null),
           fetchInternalRecommendations().catch(() => null),
           fetchBookshelf().catch(() => null),
+          fetchReadingTrail().catch(() => null),
         ]);
 
         if (!promosResponse.ok || !storesResponse.ok) {
@@ -1133,6 +1330,8 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         setRecommendationState(recommendationsResponse ? "ready" : "error");
         setBookshelf(bookshelfResponse);
         setBookshelfState(bookshelfResponse ? "ready" : "error");
+        setReadingTrail(readingTrailResponse);
+        setReadingTrailState(readingTrailResponse ? "ready" : "error");
         setDataState("ready");
       } catch {
         if (cancelled) {
@@ -1146,6 +1345,8 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         setRecommendationState("error");
         setBookshelf(null);
         setBookshelfState("error");
+        setReadingTrail(null);
+        setReadingTrailState("error");
         setDataState("error");
       }
     }
@@ -1165,6 +1366,7 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         <ReadingProgress />
         <BookRecommendationCarousel readingDnaStatus={readingDnaStatus} recommendations={recommendations} recommendationState={recommendationState} />
         <BookshelfSection bookshelf={bookshelf} bookshelfState={bookshelfState} />
+        <ReadingTrailSection readingTrail={readingTrail} readingTrailState={readingTrailState} />
         <PromoSection promos={promos} dataState={dataState} />
         <NearbyStoresSection stores={stores} dataState={dataState} />
         <FeatureCards readingDnaStatus={readingDnaStatus} shelfTotal={bookshelf?.total ?? 0} />
