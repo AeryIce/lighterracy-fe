@@ -4,11 +4,32 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import * as ZX from "@zxing/library";
 import ScanModal from "@/components/lighterracy/ScanModal";
+import { apiFetchWithAuth, getSessionTokenFromBrowser } from "@/lib/auth-client";
 
 type Mode = "type" | "scan";
 
 function cleanIsbn(raw: string) {
   return (raw || "").toUpperCase().replace(/[^0-9X]/g, "");
+}
+
+
+function recordReadingEvent(payload: {
+  event_type: string;
+  isbn_13?: string | null;
+  title?: string | null;
+  source_page?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  if (!getSessionTokenFromBrowser()) {
+    return;
+  }
+
+  void apiFetchWithAuth("/api/me/reading-events", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }).catch(() => {
+    // Jejak Bacaan tidak boleh mengganggu alur cari/scan buku.
+  });
 }
 
 function isIsbnCandidate(s: string) {
@@ -37,6 +58,12 @@ export default function BookSearch() {
       return;
     }
     setError(null);
+    recordReadingEvent({
+      event_type: "search_performed",
+      isbn_13: code,
+      source_page: "book_search",
+      metadata: { method: "typed_isbn" },
+    });
     router.push(`/isbn/${encodeURIComponent(code)}`);
   };
 
@@ -310,7 +337,15 @@ export default function BookSearch() {
             <div className="mt-2 flex gap-2">
               <button
                 type="button"
-                onClick={() => router.push(`/isbn/${detected}`)}
+                onClick={() => {
+                  recordReadingEvent({
+                    event_type: "isbn_scanned",
+                    isbn_13: detected,
+                    source_page: "book_search",
+                    metadata: { method: "image_upload" },
+                  });
+                  router.push(`/isbn/${detected}`);
+                }}
                 className="px-3 py-2 rounded-lg bg-black text-white text-sm"
               >
                 Buka detail
@@ -338,7 +373,18 @@ export default function BookSearch() {
       </div>
 
       {/* Modal kamera baru */}
-      <ScanModal open={isScanOpen} onOpenChange={setIsScanOpen} />
+      <ScanModal
+        open={isScanOpen}
+        onOpenChange={setIsScanOpen}
+        onOpenIsbn={(isbn) => {
+          recordReadingEvent({
+            event_type: "isbn_scanned",
+            isbn_13: isbn,
+            source_page: "scan_modal",
+            metadata: { method: "camera_or_manual" },
+          });
+        }}
+      />
     </>
   );
 }

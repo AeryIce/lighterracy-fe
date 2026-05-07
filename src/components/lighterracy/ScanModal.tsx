@@ -10,7 +10,7 @@ import Link from "next/link";
 import type { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
 import type { Result } from "@zxing/library";
 
-type Props = { open: boolean; onOpenChange: (v: boolean) => void };
+type Props = { open: boolean; onOpenChange: (v: boolean) => void; onOpenIsbn?: (isbn: string) => void };
 
 function isIsbn13(text: string) {
   const s = text.replace(/\D/g, "");
@@ -44,7 +44,7 @@ const scanLog = (...args: unknown[]) => {
   }
 };
 
-export default function ScanModal({ open, onOpenChange }: Props) {
+export default function ScanModal({ open, onOpenChange, onOpenIsbn }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -432,6 +432,10 @@ export default function ScanModal({ open, onOpenChange }: Props) {
           <div className="mt-auto flex flex-col gap-2 sm:flex-row">
             <Link
               href={`/isbn/${result}`}
+              onClick={() => {
+                onOpenIsbn?.(result);
+                cleanupAll();
+              }}
               className="inline-flex flex-1 items-center justify-center h-10 rounded-xl bg-brand text-sm font-medium text-black shadow-sm hover:brightness-110 transition"
             >
               Buka detail buku
