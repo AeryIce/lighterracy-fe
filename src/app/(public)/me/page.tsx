@@ -65,6 +65,27 @@ interface RecommendationStateData {
   emptyMessage: string;
 }
 
+interface BookshelfItemData {
+  id: number;
+  isbn: string;
+  title: string;
+  authorText: string;
+  coverUrl: string | null;
+  shelfStatus: string;
+  savedAt: string | null;
+}
+
+interface BookshelfResponse {
+  ok: boolean;
+  total: number;
+  items: Array<Record<string, unknown>>;
+}
+
+interface BookshelfStateData {
+  total: number;
+  items: BookshelfItemData[];
+}
+
 interface PromoCardData {
   id: string;
   title: string;
@@ -301,6 +322,67 @@ function getRecommendationBadge(readingDnaStatus: ReadingDnaStatus | null): stri
   return readingDnaStatus.readerTypeLabel ?? "Data internal";
 }
 
+function getShelfStatusLabel(status: string): string {
+  switch (status) {
+    case "want_to_read":
+      return "Ingin Dibaca";
+    case "considering":
+      return "Sedang Dipertimbangkan";
+    case "reading":
+      return "Sedang Dibaca";
+    case "read":
+      return "Sudah Dibaca";
+    case "favorite":
+      return "Favorit";
+    case "gift":
+      return "Untuk Hadiah";
+    default:
+      return "Tersimpan";
+  }
+}
+
+function normalizeBookshelfItem(raw: Record<string, unknown>): BookshelfItemData | null {
+  const isbn = readString(raw.isbn_13);
+  const title = readString(raw.title);
+
+  if (!isbn || !title) {
+    return null;
+  }
+
+  return {
+    id: readNumber(raw.id) ?? 0,
+    isbn,
+    title,
+    authorText: readString(raw.author_text, "Penulis belum tersedia"),
+    coverUrl: readString(raw.cover_url) || null,
+    shelfStatus: readString(raw.shelf_status, "want_to_read"),
+    savedAt: readString(raw.saved_at, "") || null,
+  };
+}
+
+async function fetchBookshelf(): Promise<BookshelfStateData> {
+  const response = await apiFetchWithAuth("/api/me/bookshelf", {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error("Rak Saya belum bisa dimuat.");
+  }
+
+  const data = (await response.json()) as BookshelfResponse;
+  const items = Array.isArray(data.items)
+    ? data.items
+        .filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
+        .map(normalizeBookshelfItem)
+        .filter((item): item is BookshelfItemData => item !== null)
+    : [];
+
+  return {
+    total: typeof data.total === "number" ? data.total : items.length,
+    items,
+  };
+}
+
 function LoadingView() {
   return (
     <main className="min-h-dvh bg-[#f7f7f7] px-4 py-10">
@@ -386,9 +468,12 @@ function ReadingHero({ user }: HeroProps) {
 
 function QuickActions() {
   return (
-    <div className="grid gap-3 sm:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-5">
       <Button asChild className="bg-[#0e2a47] text-white hover:bg-[#163a5f]">
         <Link href="/">🔎 Cari buku</Link>
+      </Button>
+      <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
+        <Link href="#rak-saya">📚 Rak Saya</Link>
       </Button>
       <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
         <Link href="/promos">🔥 Lihat promo</Link>
@@ -556,6 +641,93 @@ function BookRecommendationCarousel({
         <p className="mt-3 text-xs leading-5 text-zinc-500">
           Rekomendasi di ruang ini hanya boleh berasal dari data internal Lighterracy. Google Books hanya dipakai untuk lookup/enrichment saat user scan ISBN acak.
         </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface BookshelfSectionProps {
+  bookshelf: BookshelfStateData | null;
+  bookshelfState: DataState;
+}
+
+function BookshelfCover({ item }: { item: BookshelfItemData }) {
+  if (item.coverUrl) {
+    return (
+      <div
+        className="h-24 w-16 flex-none rounded-xl bg-zinc-100 bg-cover bg-center shadow-inner"
+        style={{ backgroundImage: `url(${item.coverUrl})` }}
+        aria-label={`Cover ${item.title}`}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-24 w-16 flex-none items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50 px-2 text-center text-[10px] font-semibold leading-4 text-amber-800">
+      Cover
+    </div>
+  );
+}
+
+function BookshelfSection({ bookshelf, bookshelfState }: BookshelfSectionProps) {
+  const items = bookshelf?.items ?? [];
+
+  return (
+    <Card id="rak-saya" className="border-[#eadfce] bg-white shadow-sm scroll-mt-24">
+      <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <CardTitle>Rak Saya</CardTitle>
+          <CardDescription className="leading-6">
+            Buku yang kamu simpan dari halaman detail akan muncul di sini. Ini mulai jadi jejak bacaan yang kamu pilih sendiri.
+          </CardDescription>
+        </div>
+        <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+          {bookshelf?.total ?? 0} buku tersimpan
+        </span>
+      </CardHeader>
+      <CardContent>
+        {bookshelfState === "loading" ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="h-32 animate-pulse rounded-2xl bg-zinc-100" />
+            <div className="h-32 animate-pulse rounded-2xl bg-zinc-100" />
+          </div>
+        ) : null}
+
+        {bookshelfState !== "loading" && items.length > 0 ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            {items.slice(0, 6).map((item) => (
+              <Link
+                key={`${item.isbn}-${item.id}`}
+                href={`/isbn/${item.isbn}`}
+                className="group flex gap-3 rounded-2xl border border-zinc-100 bg-[#fffaf2] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <BookshelfCover item={item} />
+                <div className="min-w-0 flex-1">
+                  <span className="inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700">
+                    {getShelfStatusLabel(item.shelfStatus)}
+                  </span>
+                  <p className="mt-2 line-clamp-2 text-sm font-semibold text-zinc-950 group-hover:text-[#0e2a47]">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{item.authorText}</p>
+                  <p className="mt-2 text-[11px] text-zinc-500">ISBN {item.isbn}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : null}
+
+        {bookshelfState !== "loading" && items.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/60 p-5 text-sm leading-6 text-amber-900">
+            <p className="font-semibold text-amber-950">Rak Saya masih kosong.</p>
+            <p className="mt-1">
+              Buka detail buku dari scan atau rekomendasi, lalu klik “Simpan ke Rak Saya”. Lightcy akan pakai sinyal ini untuk memahami minat bacaanmu dengan lebih jujur.
+            </p>
+            <Button asChild size="sm" className="mt-3 bg-[#0e2a47] text-white hover:bg-[#163a5f]">
+              <Link href="/">Cari buku pertama</Link>
+            </Button>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -778,9 +950,10 @@ function NearbyStoresSection({ stores, dataState }: NearbyStoresSectionProps) {
 
 interface FeatureCardsProps {
   readingDnaStatus: ReadingDnaStatus | null;
+  shelfTotal: number;
 }
 
-function FeatureCards({ readingDnaStatus }: FeatureCardsProps) {
+function FeatureCards({ readingDnaStatus, shelfTotal }: FeatureCardsProps) {
   const hasReadingDna = readingDnaStatus?.hasProfile ?? false;
   const readerType = readingDnaStatus?.readerTypeLabel ?? "Belum diisi";
 
@@ -822,10 +995,21 @@ function FeatureCards({ readingDnaStatus }: FeatureCardsProps) {
             Tempat menyimpan buku yang ingin dibaca, dipertimbangkan, atau ditandai sudah selesai.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <span className="inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-600">
-            Pondasi berikutnya
+        <CardContent className="space-y-3">
+          <span
+            className={
+              shelfTotal > 0
+                ? "inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700"
+                : "inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-800"
+            }
+          >
+            {shelfTotal > 0 ? `${shelfTotal} buku tersimpan` : "Siap diisi"}
           </span>
+          <div>
+            <Button asChild size="sm" variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
+              <Link href="#rak-saya">Lihat Rak Saya</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -888,17 +1072,20 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
   const [readingDnaStatus, setReadingDnaStatus] = useState<ReadingDnaStatus | null>(null);
   const [recommendations, setRecommendations] = useState<RecommendationStateData | null>(null);
   const [recommendationState, setRecommendationState] = useState<DataState>("loading");
+  const [bookshelf, setBookshelf] = useState<BookshelfStateData | null>(null);
+  const [bookshelfState, setBookshelfState] = useState<DataState>("loading");
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadDashboardData() {
       try {
-        const [promosResponse, storesResponse, readingDnaResponse, recommendationsResponse] = await Promise.all([
+        const [promosResponse, storesResponse, readingDnaResponse, recommendationsResponse, bookshelfResponse] = await Promise.all([
           fetch("/data/promos.json", { cache: "no-store" }),
           fetch("/data/stores.json", { cache: "no-store" }),
           fetchReadingDna().catch(() => null),
           fetchInternalRecommendations().catch(() => null),
+          fetchBookshelf().catch(() => null),
         ]);
 
         if (!promosResponse.ok || !storesResponse.ok) {
@@ -943,6 +1130,8 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         );
         setRecommendations(recommendationsResponse);
         setRecommendationState(recommendationsResponse ? "ready" : "error");
+        setBookshelf(bookshelfResponse);
+        setBookshelfState(bookshelfResponse ? "ready" : "error");
         setDataState("ready");
       } catch {
         if (cancelled) {
@@ -954,6 +1143,8 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         setReadingDnaStatus(null);
         setRecommendations(null);
         setRecommendationState("error");
+        setBookshelf(null);
+        setBookshelfState("error");
         setDataState("error");
       }
     }
@@ -972,9 +1163,10 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         <QuickActions />
         <ReadingProgress />
         <BookRecommendationCarousel readingDnaStatus={readingDnaStatus} recommendations={recommendations} recommendationState={recommendationState} />
+        <BookshelfSection bookshelf={bookshelf} bookshelfState={bookshelfState} />
         <PromoSection promos={promos} dataState={dataState} />
         <NearbyStoresSection stores={stores} dataState={dataState} />
-        <FeatureCards readingDnaStatus={readingDnaStatus} />
+        <FeatureCards readingDnaStatus={readingDnaStatus} shelfTotal={bookshelf?.total ?? 0} />
         <LogoutPanel onLogout={onLogout} isLoggingOut={isLoggingOut} />
       </section>
     </main>
