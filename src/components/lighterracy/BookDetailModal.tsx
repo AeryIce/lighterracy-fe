@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, Bot, BookmarkCheck, BookmarkPlus, Copy, Database, Loader2, Sparkles, X } from "lucide-react";
 import { getBackendUrl } from "@/lib/env";
 import { apiFetchWithAuth, getSessionTokenFromBrowser } from "@/lib/auth-client";
+import { recordReadingEvent } from "@/lib/reading-events";
 import PurchaseLinksPanel from "./PurchaseLinksPanel";
 
 export type Dim =
@@ -246,20 +247,15 @@ export default function BookDetailModal({
 
     detailEventRef.current = eventKey;
 
-    void apiFetchWithAuth("/api/me/reading-events", {
-      method: "POST",
-      body: JSON.stringify({
-        event_type: "book_detail_opened",
-        isbn_13: purchaseLookupIsbn,
-        title: book.title,
-        author_text: book.authors?.join(", ") ?? null,
-        source_page: "book_detail",
-        metadata: {
-          data_source: book.dataSource ?? null,
-        },
-      }),
-    }).catch(() => {
-      // Reading Trail is useful, but it should never block the detail modal.
+    void recordReadingEvent({
+      event_type: "book_detail_opened",
+      isbn_13: purchaseLookupIsbn,
+      title: book.title,
+      author_text: book.authors?.join(", ") ?? null,
+      source_page: "book_detail",
+      metadata: {
+        data_source: book.dataSource ?? null,
+      },
     });
   }, [book, open, purchaseLookupIsbn]);
 

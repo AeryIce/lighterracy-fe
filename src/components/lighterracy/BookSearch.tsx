@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import * as ZX from "@zxing/library";
 import ScanModal from "@/components/lighterracy/ScanModal";
-import { apiFetchWithAuth, getSessionTokenFromBrowser } from "@/lib/auth-client";
+import { recordReadingEvent } from "@/lib/reading-events";
 
 type Mode = "type" | "scan";
 
@@ -12,25 +12,6 @@ function cleanIsbn(raw: string) {
   return (raw || "").toUpperCase().replace(/[^0-9X]/g, "");
 }
 
-
-function recordReadingEvent(payload: {
-  event_type: string;
-  isbn_13?: string | null;
-  title?: string | null;
-  source_page?: string | null;
-  metadata?: Record<string, unknown>;
-}) {
-  if (!getSessionTokenFromBrowser()) {
-    return;
-  }
-
-  void apiFetchWithAuth("/api/me/reading-events", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  }).catch(() => {
-    // Jejak Bacaan tidak boleh mengganggu alur cari/scan buku.
-  });
-}
 
 function isIsbnCandidate(s: string) {
   const d = s.replace(/\D/g, "");
@@ -51,14 +32,14 @@ export default function BookSearch() {
   // kontrol untuk ScanModal
   const [isScanOpen, setIsScanOpen] = useState(false);
 
-  const submitTyped = () => {
+  const submitTyped = async () => {
     const code = cleanIsbn(value);
     if (!code) {
       setError("Masukkan ISBN-10/13 (angka & X).");
       return;
     }
     setError(null);
-    recordReadingEvent({
+    await recordReadingEvent({
       event_type: "search_performed",
       isbn_13: code,
       source_page: "book_search",
@@ -274,7 +255,9 @@ export default function BookSearch() {
               <input
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && submitTyped()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void submitTyped();
+                }}
                 placeholder="Ketik ISBN (contoh: 9780140280197)"
                 className="flex-1 px-3 py-2 rounded-lg border"
                 inputMode="text"
@@ -283,7 +266,7 @@ export default function BookSearch() {
               />
               <button
                 type="button"
-                onClick={submitTyped}
+                onClick={() => void submitTyped()}
                 className="px-4 py-2 rounded-lg bg-black text-white"
               >
                 Cari
@@ -337,8 +320,8 @@ export default function BookSearch() {
             <div className="mt-2 flex gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  recordReadingEvent({
+                onClick={async () => {
+                  await recordReadingEvent({
                     event_type: "isbn_scanned",
                     isbn_13: detected,
                     source_page: "book_search",
@@ -376,8 +359,8 @@ export default function BookSearch() {
       <ScanModal
         open={isScanOpen}
         onOpenChange={setIsScanOpen}
-        onOpenIsbn={(isbn) => {
-          recordReadingEvent({
+        onOpenIsbn={async (isbn) => {
+          await recordReadingEvent({
             event_type: "isbn_scanned",
             isbn_13: isbn,
             source_page: "scan_modal",

@@ -915,7 +915,16 @@ function ReadingTrailSection({ readingTrail, readingTrailState }: ReadingTrailSe
           </div>
         ) : null}
 
-        {readingTrailState !== "loading" && items.length === 0 ? (
+        {readingTrailState === "error" ? (
+          <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/70 p-5 text-sm leading-6 text-red-900">
+            <p className="font-semibold text-red-950">Jejak Bacaan belum bisa dimuat.</p>
+            <p className="mt-1">
+              Cek endpoint <code className="rounded bg-white px-1 py-0.5 text-[11px]">/api/me/reading-events</code> di Network tab. Kalau statusnya 500, biasanya migration tabel event belum jalan di environment itu.
+            </p>
+          </div>
+        ) : null}
+
+        {readingTrailState !== "loading" && readingTrailState !== "error" && items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/60 p-5 text-sm leading-6 text-amber-900">
             <p className="font-semibold text-amber-950">Jejak Bacaan masih kosong.</p>
             <p className="mt-1">
