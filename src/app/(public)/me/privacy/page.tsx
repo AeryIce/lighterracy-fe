@@ -30,6 +30,25 @@ interface ReadingEventsResponse {
   items: ReadingEventItem[];
 }
 
+
+interface ReadingDnaProfile {
+  id: number;
+  reading_purposes: string[];
+  favorite_genres: string[];
+  preferred_languages: string[];
+  reading_depth: string | null;
+  reader_type_label: string | null;
+  personalization_enabled: boolean;
+  onboarding_completed_at: string | null;
+  updated_at: string | null;
+}
+
+interface ReadingDnaResponse {
+  ok: boolean;
+  has_profile: boolean;
+  profile: ReadingDnaProfile | null;
+}
+
 const userDataRows = [
   ["Profil akun", "Nama panggilan dan email untuk login magic link."],
   ["Reading DNA", "Preferensi yang kamu isi sendiri agar rekomendasi makin relevan."],
@@ -97,11 +116,51 @@ function normalizeEvents(raw: unknown): ReadingEventItem[] {
     .filter((item): item is ReadingEventItem => item !== null && item.id > 0);
 }
 
+
+function normalizeReadingDnaProfile(raw: unknown): ReadingDnaProfile | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+
+  const row = raw as Partial<ReadingDnaProfile>;
+
+  return {
+    id: typeof row.id === "number" ? row.id : 0,
+    reading_purposes: Array.isArray(row.reading_purposes)
+      ? row.reading_purposes.filter((item): item is string => typeof item === "string")
+      : [],
+    favorite_genres: Array.isArray(row.favorite_genres)
+      ? row.favorite_genres.filter((item): item is string => typeof item === "string")
+      : [],
+    preferred_languages: Array.isArray(row.preferred_languages)
+      ? row.preferred_languages.filter((item): item is string => typeof item === "string")
+      : [],
+    reading_depth: typeof row.reading_depth === "string" ? row.reading_depth : null,
+    reader_type_label: typeof row.reader_type_label === "string" ? row.reader_type_label : null,
+    personalization_enabled: typeof row.personalization_enabled === "boolean" ? row.personalization_enabled : true,
+    onboarding_completed_at:
+      typeof row.onboarding_completed_at === "string" ? row.onboarding_completed_at : null,
+    updated_at: typeof row.updated_at === "string" ? row.updated_at : null,
+  };
+}
+
+function normalizeReadingDnaResponse(raw: unknown): ReadingDnaProfile | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+
+  const payload = raw as Partial<ReadingDnaResponse>;
+
+  return normalizeReadingDnaProfile(payload.profile);
+}
+
 export default function MyPrivacyPage() {
   const [state, setState] = useState<LoadState>("loading");
   const [events, setEvents] = useState<ReadingEventItem[]>([]);
+  const [profile, setProfile] = useState<ReadingDnaProfile | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isClearing, setIsClearing] = useState(false);
+  const [isTogglingPersonalization, setIsTogglingPersonalization] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const readingTrailCountLabel = useMemo(() => {
@@ -111,6 +170,9 @@ export default function MyPrivacyPage() {
 
     return `${events.length} buku/aktivitas terbaru`;
   }, [events.length]);
+
+  const personalizationEnabled = profile?.personalization_enabled ?? true;
+  const readerTypeLabel = profile?.reader_type_label ?? "Belum membentuk Reading DNA";
 
   const loadReadingEvents = useCallback(async () => {
     setState("loading");
@@ -132,6 +194,25 @@ export default function MyPrivacyPage() {
 
       if (!response.ok) {
         throw new Error("Data Saya belum bisa dimuat. Coba lagi sebentar ya.");
+      }
+
+      const dnaResponse = await apiFetchWithAuth("/api/me/reading-dna", {
+        method: "GET",
+      });
+
+      if (dnaResponse.status === 401) {
+        clearSessionTokenFromBrowser();
+        setState("unauthenticated");
+        setEvents([]);
+        setProfile(null);
+        return;
+      }
+
+      if (dnaResponse.ok) {
+        const dnaRaw = (await dnaResponse.json().catch(() => null)) as unknown;
+        setProfile(normalizeReadingDnaResponse(dnaRaw));
+      } else {
+        setProfile(null);
       }
 
       setEvents(normalizeEvents(raw));
@@ -192,6 +273,61 @@ export default function MyPrivacyPage() {
     }
   }
 
+
+  async function handleTogglePersonalization(): Promise<void> {
+    const nextEnabled = !personalizationEnabled;
+    const confirmed = window.confirm(
+      nextEnabled
+        ? "Aktifkan kembali rekomendasi personal? Lighterracy akan memakai Reading DNA dan aktivitas bacaan yang kamu izinkan."
+        : "Nonaktifkan rekomendasi personal? Fitur scan, detail buku, Rak Saya, toko, dan promo tetap bisa dipakai.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsTogglingPersonalization(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await apiFetchWithAuth("/api/me/reading-dna/personalization", {
+        method: "PATCH",
+        body: JSON.stringify({ personalization_enabled: nextEnabled }),
+      });
+
+      if (response.status === 401) {
+        clearSessionTokenFromBrowser();
+        setState("unauthenticated");
+        setEvents([]);
+        setProfile(null);
+        return;
+      }
+
+      const raw = (await response.json().catch(() => null)) as { message?: unknown; profile?: unknown } | null;
+
+      if (!response.ok) {
+        throw new Error("Pengaturan personalisasi belum bisa disimpan. Coba lagi sebentar ya.");
+      }
+
+      const updatedProfile = normalizeReadingDnaProfile(raw?.profile ?? null);
+      setProfile(updatedProfile);
+      setSuccessMessage(
+        typeof raw?.message === "string"
+          ? raw.message
+          : nextEnabled
+            ? "Rekomendasi personal sudah diaktifkan kembali."
+            : "Rekomendasi personal sudah dinonaktifkan.",
+      );
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Pengaturan personalisasi belum bisa disimpan.",
+      );
+    } finally {
+      setIsTogglingPersonalization(false);
+    }
+  }
+
   return (
     <main className="min-h-dvh bg-[#f7f7f7] px-4 py-8">
       <section className="mx-auto max-w-4xl space-y-5">
@@ -241,6 +377,31 @@ export default function MyPrivacyPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold text-sky-950">Rekomendasi personal</p>
+                  <p className="mt-1 text-sm leading-6 text-sky-900">
+                    Status: <span className="font-semibold">{personalizationEnabled ? "Aktif" : "Nonaktif"}</span>.
+                    {" "}Reading DNA: {readerTypeLabel}. Saat nonaktif, Lighterracy tetap bisa dipakai untuk scan, detail buku, Rak Saya, toko, dan promo umum.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isTogglingPersonalization || state === "loading" || state === "unauthenticated"}
+                  onClick={() => void handleTogglePersonalization()}
+                  className="rounded-full border-sky-300 bg-white text-sky-950 hover:bg-sky-100"
+                >
+                  {isTogglingPersonalization
+                    ? "Menyimpan..."
+                    : personalizationEnabled
+                      ? "Nonaktifkan"
+                      : "Aktifkan"}
+                </Button>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -335,7 +496,6 @@ export default function MyPrivacyPage() {
           <CardContent className="flex flex-wrap gap-2 text-xs">
             <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-zinc-600">Reset personalisasi</span>
             <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-zinc-600">Export Data Saya</span>
-            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-zinc-600">Nonaktifkan rekomendasi personal</span>
             <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-zinc-600">Hapus Rak Saya</span>
           </CardContent>
         </Card>
