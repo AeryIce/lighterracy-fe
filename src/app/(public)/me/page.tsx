@@ -557,7 +557,7 @@ function ReadingHero({ user }: HeroProps) {
 
 function QuickActions() {
   return (
-    <div className="grid gap-3 sm:grid-cols-6">
+    <div className="grid gap-3 sm:grid-cols-7">
       <Button asChild className="bg-[#0e2a47] text-white hover:bg-[#163a5f]">
         <Link href="/">🔎 Cari buku</Link>
       </Button>
@@ -575,6 +575,9 @@ function QuickActions() {
       </Button>
       <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
         <Link href="/me/reading-dna">🌱 Atur minat</Link>
+      </Button>
+      <Button asChild variant="outline" className="border-sky-200 bg-white hover:bg-sky-50">
+        <Link href="/me/privacy">🔐 Data Saya</Link>
       </Button>
     </div>
   );
@@ -1155,11 +1158,19 @@ function NearbyStoresSection({ stores, dataState }: NearbyStoresSectionProps) {
 interface FeatureCardsProps {
   readingDnaStatus: ReadingDnaStatus | null;
   shelfTotal: number;
+  isTogglingPersonalization: boolean;
+  onTogglePersonalization: () => void;
 }
 
-function FeatureCards({ readingDnaStatus, shelfTotal }: FeatureCardsProps) {
+function FeatureCards({
+  readingDnaStatus,
+  shelfTotal,
+  isTogglingPersonalization,
+  onTogglePersonalization,
+}: FeatureCardsProps) {
   const hasReadingDna = readingDnaStatus?.hasProfile ?? false;
   const readerType = readingDnaStatus?.readerTypeLabel ?? "Belum diisi";
+  const personalizationEnabled = readingDnaStatus?.personalizationEnabled ?? true;
 
   return (
     <div id="reading-dna" className="grid gap-4 md:grid-cols-3">
@@ -1221,13 +1232,52 @@ function FeatureCards({ readingDnaStatus, shelfTotal }: FeatureCardsProps) {
         <CardHeader>
           <CardTitle className="text-base">🔐 Data & Privasi</CardTitle>
           <CardDescription className="leading-6">
-            Kamu tetap pegang kendali. Personalisasi akan tumbuh dari data yang kamu izinkan.
+            Kontrol cepat untuk personalisasi. Detail lengkapnya tetap ada di halaman Data Saya.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
-            Transparan dulu
+        <CardContent className="space-y-3">
+          <span
+            className={
+              personalizationEnabled
+                ? "inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700"
+                : "inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-600"
+            }
+          >
+            {personalizationEnabled ? "Rekomendasi personal aktif" : "Rekomendasi personal nonaktif"}
           </span>
+          <p className="text-sm leading-6 text-zinc-600">
+            {personalizationEnabled
+              ? "Lighterracy boleh memakai Reading DNA dan aktivitas bacaan yang kamu izinkan untuk memilih rekomendasi."
+              : "Fitur dasar tetap jalan: scan ISBN, detail buku, Rak Saya, toko, dan promo umum."}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={personalizationEnabled ? "outline" : "default"}
+              disabled={!hasReadingDna || isTogglingPersonalization}
+              onClick={onTogglePersonalization}
+              className={
+                personalizationEnabled
+                  ? "border-amber-200 bg-white hover:bg-amber-50"
+                  : "bg-[#0e2a47] text-white hover:bg-[#163a5f]"
+              }
+            >
+              {isTogglingPersonalization
+                ? "Menyimpan..."
+                : personalizationEnabled
+                  ? "Nonaktifkan"
+                  : "Aktifkan"}
+            </Button>
+            <Button asChild size="sm" variant="ghost" className="text-[#0e2a47] hover:bg-sky-50">
+              <Link href="/me/privacy">Lihat Data Saya</Link>
+            </Button>
+          </div>
+          {!hasReadingDna ? (
+            <p className="text-xs leading-5 text-amber-700">
+              Isi Reading DNA dulu untuk memakai kontrol rekomendasi personal.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
     </div>
@@ -1280,6 +1330,7 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
   const [bookshelfState, setBookshelfState] = useState<DataState>("loading");
   const [readingTrail, setReadingTrail] = useState<ReadingTrailStateData | null>(null);
   const [readingTrailState, setReadingTrailState] = useState<DataState>("loading");
+  const [isTogglingPersonalization, setIsTogglingPersonalization] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1367,6 +1418,74 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
     };
   }, []);
 
+  async function handleTogglePersonalization(): Promise<void> {
+    const currentEnabled = readingDnaStatus?.personalizationEnabled ?? true;
+    const nextEnabled = !currentEnabled;
+    const confirmed = window.confirm(
+      nextEnabled
+        ? "Aktifkan kembali rekomendasi personal? Lighterracy akan memakai Reading DNA dan aktivitas bacaan yang kamu izinkan."
+        : "Nonaktifkan rekomendasi personal? Scan ISBN, detail buku, Rak Saya, toko, dan promo umum tetap bisa dipakai.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsTogglingPersonalization(true);
+
+    try {
+      const response = await apiFetchWithAuth("/api/me/reading-dna/personalization", {
+        method: "PATCH",
+        body: JSON.stringify({ personalization_enabled: nextEnabled }),
+      });
+
+      if (response.status === 401) {
+        clearSessionTokenFromBrowser();
+        return;
+      }
+
+      const raw = (await response.json().catch(() => null)) as { profile?: unknown } | null;
+
+      if (!response.ok) {
+        throw new Error("Pengaturan personalisasi belum bisa disimpan.");
+      }
+
+      const profile =
+        typeof raw?.profile === "object" && raw.profile !== null && !Array.isArray(raw.profile)
+          ? (raw.profile as Record<string, unknown>)
+          : null;
+
+      const favoriteGenres = Array.isArray(profile?.favorite_genres)
+        ? profile.favorite_genres.filter((item): item is string => typeof item === "string")
+        : readingDnaStatus?.favoriteGenres ?? [];
+
+      const nextStatus: ReadingDnaStatus = {
+        hasProfile: true,
+        readerTypeLabel:
+          typeof profile?.reader_type_label === "string"
+            ? profile.reader_type_label
+            : readingDnaStatus?.readerTypeLabel ?? null,
+        favoriteGenres,
+        favoriteGenresCount: favoriteGenres.length,
+        personalizationEnabled:
+          typeof profile?.personalization_enabled === "boolean"
+            ? profile.personalization_enabled
+            : nextEnabled,
+      };
+
+      setReadingDnaStatus(nextStatus);
+      setRecommendationState("loading");
+
+      const nextRecommendations = await fetchInternalRecommendations().catch(() => null);
+      setRecommendations(nextRecommendations);
+      setRecommendationState(nextRecommendations ? "ready" : "error");
+    } catch {
+      window.alert("Pengaturan personalisasi belum bisa disimpan. Coba lagi sebentar ya.");
+    } finally {
+      setIsTogglingPersonalization(false);
+    }
+  }
+
   return (
     <main className="min-h-dvh bg-[#f7f7f7] px-4 py-8">
       <section className="mx-auto max-w-5xl space-y-5">
@@ -1378,7 +1497,12 @@ function ReadingSpace({ user, onLogout, isLoggingOut }: ReadingSpaceProps) {
         <ReadingTrailSection readingTrail={readingTrail} readingTrailState={readingTrailState} />
         <PromoSection promos={promos} dataState={dataState} />
         <NearbyStoresSection stores={stores} dataState={dataState} />
-        <FeatureCards readingDnaStatus={readingDnaStatus} shelfTotal={bookshelf?.total ?? 0} />
+        <FeatureCards
+          readingDnaStatus={readingDnaStatus}
+          shelfTotal={bookshelf?.total ?? 0}
+          isTogglingPersonalization={isTogglingPersonalization}
+          onTogglePersonalization={() => void handleTogglePersonalization()}
+        />
         <LogoutPanel onLogout={onLogout} isLoggingOut={isLoggingOut} />
       </section>
     </main>
