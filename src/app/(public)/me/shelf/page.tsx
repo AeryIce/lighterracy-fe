@@ -1,8 +1,10 @@
 "use client";
 
+import ReadingReviewForm from "@/components/lighterracy/ReadingReviewForm";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import {
   Card,
   CardContent,
@@ -405,6 +407,12 @@ function ShelfItemCard({
           </div>
         </div>
       </div>
+      {item.shelfStatus === "read" && (
+        <ReadingReviewForm
+          isbn={item.isbn}
+          title={item.title}
+        />
+      )}
     </article>
   );
 }
@@ -611,6 +619,9 @@ export default function MyShelfPage() {
           </Button>
           <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
             <Link href="/me/privacy">Data Saya</Link>
+          </Button>
+          <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
+            <Link href="/me/reviews">📚 Kesan Bacaan</Link>
           </Button>
         </div>
 
