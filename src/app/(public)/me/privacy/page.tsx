@@ -30,6 +30,24 @@ interface ReadingEventsResponse {
   items: ReadingEventItem[];
 }
 
+interface PurchaseClickItem {
+  id: number;
+  isbn_13: string | null;
+  title: string | null;
+  author_text: string | null;
+  cover_url: string | null;
+  channel: string;
+  channel_label: string;
+  source_page: string | null;
+  clicked_at: string | null;
+}
+
+interface PurchaseClicksResponse {
+  ok: boolean;
+  total: number;
+  items: PurchaseClickItem[];
+}
+
 
 interface ReadingDnaProfile {
   id: number;
@@ -117,6 +135,45 @@ function normalizeEvents(raw: unknown): ReadingEventItem[] {
 }
 
 
+function normalizePurchaseClicks(raw: unknown): PurchaseClickItem[] {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return [];
+  }
+
+  const payload = raw as Partial<PurchaseClicksResponse>;
+
+  if (!Array.isArray(payload.items)) {
+    return [];
+  }
+
+  return payload.items
+    .map((item): PurchaseClickItem | null => {
+      if (typeof item !== "object" || item === null || Array.isArray(item)) {
+        return null;
+      }
+
+      const row = item as Partial<PurchaseClickItem>;
+      const id = typeof row.id === "number" ? row.id : 0;
+
+      return {
+        id,
+        isbn_13: typeof row.isbn_13 === "string" ? row.isbn_13 : null,
+        title: typeof row.title === "string" ? row.title : null,
+        author_text: typeof row.author_text === "string" ? row.author_text : null,
+        cover_url: typeof row.cover_url === "string" ? row.cover_url : null,
+        channel: typeof row.channel === "string" ? row.channel : "unknown",
+        channel_label:
+          typeof row.channel_label === "string" && row.channel_label.trim() !== ""
+            ? row.channel_label
+            : "Channel pembelian",
+        source_page: typeof row.source_page === "string" ? row.source_page : null,
+        clicked_at: typeof row.clicked_at === "string" ? row.clicked_at : null,
+      };
+    })
+    .filter((item): item is PurchaseClickItem => item !== null && item.id > 0);
+}
+
+
 function normalizeReadingDnaProfile(raw: unknown): ReadingDnaProfile | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return null;
@@ -157,6 +214,7 @@ function normalizeReadingDnaResponse(raw: unknown): ReadingDnaProfile | null {
 export default function MyPrivacyPage() {
   const [state, setState] = useState<LoadState>("loading");
   const [events, setEvents] = useState<ReadingEventItem[]>([]);
+  const [purchaseClicks, setPurchaseClicks] = useState<PurchaseClickItem[]>([]);
   const [profile, setProfile] = useState<ReadingDnaProfile | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isClearing, setIsClearing] = useState(false);
@@ -170,6 +228,14 @@ export default function MyPrivacyPage() {
 
     return `${events.length} buku/aktivitas terbaru`;
   }, [events.length]);
+
+  const purchaseClickCountLabel = useMemo(() => {
+    if (purchaseClicks.length === 0) {
+      return "Belum ada klik pembelian terbaru";
+    }
+
+    return `${purchaseClicks.length} channel/buku terbaru`;
+  }, [purchaseClicks.length]);
 
   const personalizationEnabled = profile?.personalization_enabled ?? true;
   const readerTypeLabel = profile?.reader_type_label ?? "Belum membentuk Reading DNA";
@@ -187,6 +253,7 @@ export default function MyPrivacyPage() {
         clearSessionTokenFromBrowser();
         setState("unauthenticated");
         setEvents([]);
+        setPurchaseClicks([]);
         return;
       }
 
@@ -213,6 +280,26 @@ export default function MyPrivacyPage() {
         setProfile(normalizeReadingDnaResponse(dnaRaw));
       } else {
         setProfile(null);
+      }
+
+      const purchaseResponse = await apiFetchWithAuth("/api/me/purchase-clicks?limit=8", {
+        method: "GET",
+      });
+
+      if (purchaseResponse.status === 401) {
+        clearSessionTokenFromBrowser();
+        setState("unauthenticated");
+        setEvents([]);
+        setPurchaseClicks([]);
+        setProfile(null);
+        return;
+      }
+
+      if (purchaseResponse.ok) {
+        const purchaseRaw = (await purchaseResponse.json().catch(() => null)) as unknown;
+        setPurchaseClicks(normalizePurchaseClicks(purchaseRaw));
+      } else {
+        setPurchaseClicks([]);
       }
 
       setEvents(normalizeEvents(raw));
@@ -423,6 +510,14 @@ export default function MyPrivacyPage() {
               </div>
             </div>
 
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="font-semibold text-emerald-950">Klik pembelian</p>
+              <p className="mt-1 text-sm leading-6 text-emerald-900">
+                {purchaseClickCountLabel}. Data ini mencatat channel yang kamu pilih saat membuka link pembelian resmi,
+                supaya kamu bisa melihat jejak keluar dari Lighterracy dengan jelas.
+              </p>
+            </div>
+
             {successMessage ? (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                 {successMessage}
@@ -486,6 +581,49 @@ export default function MyPrivacyPage() {
           </CardContent>
         </Card>
 
+        <Card className="border-[#eadfce] bg-white shadow-sm">
+          <CardHeader>
+            <CardTitle>Preview Klik Pembelian</CardTitle>
+            <CardDescription className="leading-6">
+              User bisa melihat channel pembelian apa saja yang pernah dipilih dari Lighterracy.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {state === "loading" ? (
+              <div className="rounded-2xl border border-zinc-100 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                Memuat klik pembelian...
+              </div>
+            ) : null}
+
+            {state === "ready" && purchaseClicks.length === 0 ? (
+              <div className="rounded-2xl border border-zinc-100 bg-zinc-50 px-4 py-3 text-sm leading-6 text-zinc-600">
+                Belum ada klik pembelian yang tercatat. Nanti kalau kamu membuka link Periplus/Tokopedia/Shopee dari detail buku, jejaknya muncul di sini.
+              </div>
+            ) : null}
+
+            {state === "ready" && purchaseClicks.length > 0
+              ? purchaseClicks.map((click) => (
+                  <div key={click.id} className="rounded-2xl border border-zinc-100 bg-[#f5fff8] px-4 py-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                          {click.channel_label}
+                        </p>
+                        <p className="mt-1 font-semibold text-zinc-950">
+                          {click.title ?? (click.isbn_13 ? `Buku ISBN ${click.isbn_13}` : "Klik pembelian")}
+                        </p>
+                        {click.author_text ? (
+                          <p className="mt-1 text-sm text-zinc-500">{click.author_text}</p>
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-zinc-500">{formatDateTime(click.clicked_at)}</p>
+                    </div>
+                  </div>
+                ))
+              : null}
+          </CardContent>
+        </Card>
+
         <Card className="border-dashed border-zinc-300 bg-white shadow-sm">
           <CardHeader>
             <CardTitle>Kontrol berikutnya</CardTitle>
@@ -497,6 +635,7 @@ export default function MyPrivacyPage() {
             <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-zinc-600">Reset personalisasi</span>
             <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-zinc-600">Export Data Saya</span>
             <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-zinc-600">Hapus Rak Saya</span>
+            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-zinc-600">Hapus Klik Pembelian</span>
           </CardContent>
         </Card>
       </section>
