@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
 // type-only imports (tidak ikut dibundle)
 import type { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
 import type { Result } from "@zxing/library";
 
-type Props = { open: boolean; onOpenChange: (v: boolean) => void };
+type Props = { open: boolean; onOpenChange: (v: boolean) => void; onOpenIsbn?: (isbn: string) => void | Promise<void> };
 
 function isIsbn13(text: string) {
   const s = text.replace(/\D/g, "");
@@ -44,7 +44,8 @@ const scanLog = (...args: unknown[]) => {
   }
 };
 
-export default function ScanModal({ open, onOpenChange }: Props) {
+export default function ScanModal({ open, onOpenChange, onOpenIsbn }: Props) {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -378,6 +379,21 @@ export default function ScanModal({ open, onOpenChange }: Props) {
     }
   }
 
+
+  async function handleOpenDetail() {
+    if (!result) {
+      return;
+    }
+
+    try {
+      await onOpenIsbn?.(result);
+    } finally {
+      cleanupAll();
+      onOpenChange(false);
+      router.push(`/isbn/${result}`);
+    }
+  }
+
   const handleManual = () => {
     const s = manualIsbn.replace(/\D/g, "");
     if (isIsbn13(s)) {
@@ -430,12 +446,13 @@ export default function ScanModal({ open, onOpenChange }: Props) {
           </div>
 
           <div className="mt-auto flex flex-col gap-2 sm:flex-row">
-            <Link
-              href={`/isbn/${result}`}
+            <Button
+              type="button"
+              onClick={() => void handleOpenDetail()}
               className="inline-flex flex-1 items-center justify-center h-10 rounded-xl bg-brand text-sm font-medium text-black shadow-sm hover:brightness-110 transition"
             >
               Buka detail buku
-            </Link>
+            </Button>
             <Button
               type="button"
               variant="outline"

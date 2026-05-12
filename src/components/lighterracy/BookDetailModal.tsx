@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, Bot, Copy, Database, Sparkles, X } from "lucide-react";
+import { BookOpen, Bot, BookmarkCheck, BookmarkPlus, Copy, Database, Loader2, Sparkles, X } from "lucide-react";
 import { getBackendUrl } from "@/lib/env";
+import { apiFetchWithAuth, getSessionTokenFromBrowser } from "@/lib/auth-client";
+import { recordReadingEvent } from "@/lib/reading-events";
 import PurchaseLinksPanel from "./PurchaseLinksPanel";
 
 export type Dim =
@@ -39,6 +41,49 @@ type LightcyChatBookResponse = {
   isbn: string;
   answer: string;
 };
+
+type BookshelfItemPayload = {
+  shelf_status?: string | null;
+};
+
+type BookshelfLookupResponse = {
+  ok?: boolean;
+  found?: boolean;
+  item?: BookshelfItemPayload | null;
+  message?: unknown;
+};
+
+type BookshelfStoreResponse = {
+  ok?: boolean;
+  message?: string;
+  item?: BookshelfItemPayload | null;
+};
+
+type ShelfState = "idle" | "checking" | "not_saved" | "saving" | "saved" | "logged_out" | "error";
+
+function statusLabel(status?: string | null): string {
+  switch (status) {
+    case "want_to_read":
+      return "Ingin Dibaca";
+    case "considering":
+      return "Sedang Dipertimbangkan";
+    case "reading":
+      return "Sedang Dibaca";
+    case "read":
+      return "Sudah Dibaca";
+    case "favorite":
+      return "Favorit";
+    case "gift":
+      return "Untuk Hadiah";
+    default:
+      return "Tersimpan";
+  }
+}
+
+function pickUrlForPayload(url: string): string | null {
+  return /^https?:\/\//i.test(url) ? url : null;
+}
+
 
 type Props = {
   open?: boolean;
@@ -128,10 +173,15 @@ export default function BookDetailModal({
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<number | null>(null);
+  const detailEventRef = useRef<string | null>(null);
 
   const [lightcyAnswer, setLightcyAnswer] = useState<string | null>(null);
   const [lightcyLoading, setLightcyLoading] = useState(false);
   const [lightcyError, setLightcyError] = useState<string | null>(null);
+
+  const [shelfState, setShelfState] = useState<ShelfState>("idle");
+  const [shelfMessage, setShelfMessage] = useState<string | null>(null);
+  const [shelfLabel, setShelfLabel] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -180,6 +230,103 @@ export default function BookDetailModal({
   const source = sourceBadge(book);
   const SourceIcon = source.icon;
 
+  useEffect(() => {
+    if (!open || !book || !purchaseLookupIsbn) {
+      return;
+    }
+
+    const token = getSessionTokenFromBrowser();
+    if (!token) {
+      return;
+    }
+
+    const eventKey = `${purchaseLookupIsbn}:${book.dataSource ?? "unknown"}`;
+    if (detailEventRef.current === eventKey) {
+      return;
+    }
+
+    detailEventRef.current = eventKey;
+
+    void recordReadingEvent({
+      event_type: "book_detail_opened",
+      isbn_13: purchaseLookupIsbn,
+      title: book.title,
+      author_text: book.authors?.join(", ") ?? null,
+      source_page: "book_detail",
+      metadata: {
+        data_source: book.dataSource ?? null,
+      },
+    });
+  }, [book, open, purchaseLookupIsbn]);
+
+  useEffect(() => {
+    if (!open || !book || !purchaseLookupIsbn) {
+      setShelfState("idle");
+      setShelfMessage(null);
+      setShelfLabel(null);
+      return;
+    }
+
+    const token = getSessionTokenFromBrowser();
+    if (!token) {
+      setShelfState("logged_out");
+      setShelfMessage("Masuk dulu untuk menyimpan buku ini ke Rak Saya.");
+      setShelfLabel(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function checkShelf() {
+      try {
+        setShelfState("checking");
+        setShelfMessage(null);
+        setShelfLabel(null);
+
+        const response = await apiFetchWithAuth(`/api/me/bookshelf/${encodeURIComponent(purchaseLookupIsbn)}`, {
+          method: "GET",
+        });
+
+        if (cancelled) return;
+
+        if (response.status === 401) {
+          setShelfState("logged_out");
+          setShelfMessage("Sesi masuk belum aktif. Masuk dulu untuk menyimpan buku ini.");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Rak Saya belum bisa dicek.");
+        }
+
+        const data = (await response.json()) as BookshelfLookupResponse;
+
+        if (cancelled) return;
+
+        if (data.found && data.item) {
+          setShelfState("saved");
+          setShelfLabel(statusLabel(data.item.shelf_status));
+          setShelfMessage("Buku ini sudah ada di Rak Saya.");
+          return;
+        }
+
+        setShelfState("not_saved");
+        setShelfMessage(null);
+      } catch {
+        if (!cancelled) {
+          setShelfState("error");
+          setShelfMessage("Rak Saya belum bisa dicek. Kamu tetap bisa coba simpan manual.");
+        }
+      }
+    }
+
+    void checkShelf();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [book, open, purchaseLookupIsbn]);
+
   const showReadMore = useMemo(
     () => Boolean(safeDescHtml && safeDescHtml.length > 700),
     [safeDescHtml],
@@ -203,6 +350,76 @@ export default function BookDetailModal({
       copyTimer.current = window.setTimeout(() => setCopied(false), 1400);
     } catch {
       // no-op
+    }
+  }
+
+  async function handleSaveToShelf() {
+    const isbn = purchaseLookupIsbn || book?.isbn13;
+
+    if (!book || !isbn) {
+      setShelfState("error");
+      setShelfMessage("ISBN buku ini belum terbaca, jadi belum bisa disimpan.");
+      return;
+    }
+
+    const token = getSessionTokenFromBrowser();
+    if (!token) {
+      setShelfState("logged_out");
+      setShelfMessage("Masuk dulu untuk menyimpan buku ini ke Rak Saya.");
+      return;
+    }
+
+    try {
+      setShelfState("saving");
+      setShelfMessage(null);
+
+      const response = await apiFetchWithAuth("/api/me/bookshelf", {
+        method: "POST",
+        body: JSON.stringify({
+          isbn_13: isbn,
+          title: book.title,
+          author_text: book.authors?.join(", ") ?? null,
+          cover_url: pickUrlForPayload(cover),
+          shelf_status: "want_to_read",
+          source_page: "book_detail",
+        }),
+      });
+
+      if (response.status === 401) {
+        setShelfState("logged_out");
+        setShelfMessage("Sesi masuk belum aktif. Masuk dulu untuk menyimpan buku ini.");
+        return;
+      }
+
+      let message = "Buku sudah masuk ke Rak Saya.";
+      let itemStatus: string | null = "want_to_read";
+
+      try {
+        const data = (await response.json()) as BookshelfStoreResponse;
+        if (typeof data.message === "string" && data.message.trim()) {
+          message = data.message;
+        }
+        itemStatus = data.item?.shelf_status ?? itemStatus;
+      } catch {
+        // Keep default message.
+      }
+
+      if (!response.ok) {
+        throw new Error(message || "Rak Saya belum bisa diperbarui.");
+      }
+
+      setShelfState("saved");
+      setShelfLabel(statusLabel(itemStatus));
+      setShelfMessage(message);
+    } catch (error) {
+      setShelfState("error");
+      setShelfMessage(error instanceof Error ? error.message : "Rak Saya belum bisa diperbarui.");
+    }
+  }
+
+  function handleShelfLogin() {
+    if (typeof window !== "undefined") {
+      window.location.href = "/register";
     }
   }
 
@@ -437,6 +654,12 @@ export default function BookDetailModal({
               </section>
             )}
 
+            {shelfMessage && shelfState !== "saved" ? (
+              <p className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+                {shelfMessage}
+              </p>
+            ) : null}
+
             {lightcyError ? (
               <p className="mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
                 {lightcyError}
@@ -455,6 +678,39 @@ export default function BookDetailModal({
           </div>
 
           <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t border-neutral-100 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/90">
+            {book ? (
+              <button
+                type="button"
+                className={[
+                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-70",
+                  shelfState === "saved"
+                    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                    : shelfState === "logged_out"
+                      ? "bg-[#0e2a47] text-white hover:bg-[#163a5f]"
+                      : "bg-amber-100 text-amber-900 hover:bg-amber-200",
+                ].join(" ")}
+                onClick={shelfState === "logged_out" ? handleShelfLogin : () => void handleSaveToShelf()}
+                disabled={shelfState === "checking" || shelfState === "saving" || shelfState === "saved"}
+                title={shelfMessage ?? undefined}
+              >
+                {shelfState === "checking" || shelfState === "saving" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : shelfState === "saved" ? (
+                  <BookmarkCheck className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <BookmarkPlus className="h-4 w-4" aria-hidden="true" />
+                )}
+                {shelfState === "checking"
+                  ? "Cek Rak..."
+                  : shelfState === "saving"
+                    ? "Menyimpan..."
+                    : shelfState === "saved"
+                      ? shelfLabel ?? "Tersimpan"
+                      : shelfState === "logged_out"
+                        ? "Masuk untuk simpan"
+                        : "Simpan ke Rak Saya"}
+              </button>
+            ) : null}
             {purchaseLookupIsbn ? (
               <button
                 type="button"

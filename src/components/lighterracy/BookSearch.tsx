@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import * as ZX from "@zxing/library";
 import ScanModal from "@/components/lighterracy/ScanModal";
+import { recordReadingEvent } from "@/lib/reading-events";
 
 type Mode = "type" | "scan";
 
 function cleanIsbn(raw: string) {
   return (raw || "").toUpperCase().replace(/[^0-9X]/g, "");
 }
+
 
 function isIsbnCandidate(s: string) {
   const d = s.replace(/\D/g, "");
@@ -30,13 +32,19 @@ export default function BookSearch() {
   // kontrol untuk ScanModal
   const [isScanOpen, setIsScanOpen] = useState(false);
 
-  const submitTyped = () => {
+  const submitTyped = async () => {
     const code = cleanIsbn(value);
     if (!code) {
       setError("Masukkan ISBN-10/13 (angka & X).");
       return;
     }
     setError(null);
+    await recordReadingEvent({
+      event_type: "search_performed",
+      isbn_13: code,
+      source_page: "book_search",
+      metadata: { method: "typed_isbn" },
+    });
     router.push(`/isbn/${encodeURIComponent(code)}`);
   };
 
@@ -247,7 +255,9 @@ export default function BookSearch() {
               <input
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && submitTyped()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void submitTyped();
+                }}
                 placeholder="Ketik ISBN (contoh: 9780140280197)"
                 className="flex-1 px-3 py-2 rounded-lg border"
                 inputMode="text"
@@ -256,7 +266,7 @@ export default function BookSearch() {
               />
               <button
                 type="button"
-                onClick={submitTyped}
+                onClick={() => void submitTyped()}
                 className="px-4 py-2 rounded-lg bg-black text-white"
               >
                 Cari
@@ -310,7 +320,15 @@ export default function BookSearch() {
             <div className="mt-2 flex gap-2">
               <button
                 type="button"
-                onClick={() => router.push(`/isbn/${detected}`)}
+                onClick={async () => {
+                  await recordReadingEvent({
+                    event_type: "isbn_scanned",
+                    isbn_13: detected,
+                    source_page: "book_search",
+                    metadata: { method: "image_upload" },
+                  });
+                  router.push(`/isbn/${detected}`);
+                }}
                 className="px-3 py-2 rounded-lg bg-black text-white text-sm"
               >
                 Buka detail
@@ -338,7 +356,18 @@ export default function BookSearch() {
       </div>
 
       {/* Modal kamera baru */}
-      <ScanModal open={isScanOpen} onOpenChange={setIsScanOpen} />
+      <ScanModal
+        open={isScanOpen}
+        onOpenChange={setIsScanOpen}
+        onOpenIsbn={async (isbn) => {
+          await recordReadingEvent({
+            event_type: "isbn_scanned",
+            isbn_13: isbn,
+            source_page: "scan_modal",
+            metadata: { method: "camera_or_manual" },
+          });
+        }}
+      />
     </>
   );
 }

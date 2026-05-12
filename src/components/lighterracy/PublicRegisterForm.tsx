@@ -245,8 +245,12 @@ export function PublicRegisterForm() {
                   className="mt-1 h-4 w-4 rounded border-amber-400"
                 />
                 <span className="text-xs leading-5 text-amber-950">
-                  Saya setuju Lightcy memakai data yang saya pilih—seperti nama, email, dan minat
-                  bacaan—untuk membantu memberi rekomendasi yang lebih pas. Bisa diatur bertahap nanti.
+                  Saya paham Lighterracy memakai data yang saya berikan—seperti nama, email, dan
+                  pilihan minat bacaan—untuk membuat pengalaman membaca lebih relevan. Data tambahan
+                  seperti Rak Saya, Jejak Bacaan, dan lokasi hanya dipakai saat saya memakai fiturnya.
+                  <Link href="/privacy" className="ml-1 font-semibold underline underline-offset-4">
+                    Lihat Info & Izin Data.
+                  </Link>
                 </span>
               </label>
 

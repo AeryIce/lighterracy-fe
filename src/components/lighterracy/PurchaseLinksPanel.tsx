@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type MouseEvent, useEffect, useMemo, useState } from "react";
 import { getBackendUrl } from "@/lib/env";
+import { apiFetchWithAuth, getSessionTokenFromBrowser } from "@/lib/auth-client";
 
 type PurchaseChannel = "periplus" | "tokopedia" | "shopee" | string;
 
@@ -19,6 +20,11 @@ type PurchaseLinksResponse = {
   ok: boolean;
   isbn: string;
   links: PurchaseLink[];
+};
+
+type UserPurchaseClickResponse = {
+  ok?: boolean;
+  target_url?: string;
 };
 
 type Props = {
@@ -134,6 +140,7 @@ export default function PurchaseLinksPanel({
   const [visitorToken, setVisitorToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openingChannel, setOpeningChannel] = useState<string | null>(null);
 
   const safeIsbn = typeof isbn === "string" ? isbn.trim() : "";
   const safeSourcePage = sourcePage ?? "book_detail";
@@ -215,6 +222,52 @@ export default function PurchaseLinksPanel({
       }),
     [links],
   );
+
+  async function handlePurchaseClick(
+    event: MouseEvent<HTMLAnchorElement>,
+    link: PurchaseLink,
+    fallbackHref: string,
+  ): Promise<void> {
+    const token = getSessionTokenFromBrowser();
+
+    if (!token) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const popup = window.open("about:blank", "_blank");
+    setOpeningChannel(link.channel);
+
+    try {
+      const response = await apiFetchWithAuth("/api/me/purchase-clicks", {
+        method: "POST",
+        body: JSON.stringify({
+          isbn: link.isbn_13 || safeIsbn,
+          channel: link.channel,
+          source_page: safeSourcePage,
+          visitor_token: visitorToken || null,
+        }),
+      });
+
+      const raw = (await response.json().catch(() => null)) as UserPurchaseClickResponse | null;
+      const targetUrl = typeof raw?.target_url === "string" ? raw.target_url : fallbackHref;
+
+      if (popup) {
+        popup.location.href = targetUrl;
+      } else {
+        window.open(targetUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch {
+      if (popup) {
+        popup.location.href = fallbackHref;
+      } else {
+        window.open(fallbackHref, "_blank", "noopener,noreferrer");
+      }
+    } finally {
+      setOpeningChannel(null);
+    }
+  }
 
   if (!safeIsbn) return null;
 
@@ -338,9 +391,12 @@ export default function PurchaseLinksPanel({
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(event) => {
+                    void handlePurchaseClick(event, link, href);
+                  }}
                   className={`mt-4 inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-bold shadow-sm transition ${meta.buttonClassName}`}
                 >
-                  Buka link →
+                  {openingChannel === link.channel ? "Membuka..." : "Buka link →"}
                 </a>
               </article>
             );

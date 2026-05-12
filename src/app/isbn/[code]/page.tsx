@@ -51,6 +51,7 @@ type BookDetailResponse = {
   is_internal?: boolean;
   book?: BookDetailPayload | null;
   external_enrichment?: unknown;
+  show_purchase_links?: boolean;
 };
 
 type PageBookResult = {
@@ -210,7 +211,10 @@ function mapBookDetail(response: BookDetailResponse, requestedIsbn: string): Pag
     sourceLabel:
       response.source_label ?? (isInternal ? "Data Lighterracy" : "Info eksternal"),
     canRecommend: response.can_recommend === true || b.can_recommend === true,
-    showPurchaseLinks: isInternal,
+    showPurchaseLinks:
+      typeof response.show_purchase_links === "boolean"
+        ? response.show_purchase_links
+        : isInternal,
   };
 }
 
