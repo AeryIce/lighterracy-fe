@@ -562,7 +562,7 @@ function QuickActions() {
         <Link href="/">🔎 Cari buku</Link>
       </Button>
       <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
-        <Link href="#rak-saya">📚 Rak Saya</Link>
+        <Link href="me/shelf">📚 Rak Saya</Link>
       </Button>
       <Button asChild variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
         <Link href="#jejak-bacaan">🧭 Jejak Bacaan</Link>
