@@ -1205,7 +1205,7 @@ function FeatureCards({
 
       <Card className="border-[#eadfce] bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">📚 Rak Saya</CardTitle>
+          <CardTitle className="text-base">📚 Buka Rak Saya →</CardTitle>
           <CardDescription className="leading-6">
             Tempat menyimpan buku yang ingin dibaca, dipertimbangkan, atau ditandai sudah selesai.
           </CardDescription>
@@ -1222,7 +1222,7 @@ function FeatureCards({
           </span>
           <div>
             <Button asChild size="sm" variant="outline" className="border-amber-200 bg-white hover:bg-amber-50">
-              <Link href="#rak-saya">Lihat Rak Saya</Link>
+              <Link href="/me/shelf">Lihat Rak Saya</Link>
             </Button>
           </div>
         </CardContent>
